@@ -3,465 +3,1030 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>PDF Page Extractor</title>
+    <title>PDF Extractor</title>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
+        :root {
+            --primary: #6366f1;
+            --primary-light: #818cf8;
+            --accent: #06b6d4;
+            --success: #10b981;
+            --error: #ef4444;
+            --bg: #060612;
+            --card: rgba(255,255,255,0.04);
+            --border: rgba(255,255,255,0.08);
+            --text: #f1f5f9;
+            --text-dim: #64748b;
+            --text-mid: #94a3b8;
         }
 
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+
         body {
-            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
-            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            font-family: 'Inter', sans-serif;
+            background: var(--bg);
             min-height: 100vh;
             display: flex;
             align-items: center;
             justify-content: center;
             padding: 20px;
-            color: #f1f5f9;
+            color: var(--text);
+            overflow-x: hidden;
         }
 
+        /* ── Sfondo animato ── */
+        .bg-orbs {
+            position: fixed;
+            inset: 0;
+            pointer-events: none;
+            z-index: 0;
+            overflow: hidden;
+        }
+        .orb {
+            position: absolute;
+            border-radius: 50%;
+            filter: blur(80px);
+            animation: orbFloat 8s ease-in-out infinite;
+        }
+        .orb-1 {
+            width: 500px; height: 500px;
+            background: radial-gradient(circle, rgba(99,102,241,0.15), transparent);
+            top: -150px; left: -150px;
+            animation-delay: 0s;
+        }
+        .orb-2 {
+            width: 400px; height: 400px;
+            background: radial-gradient(circle, rgba(6,182,212,0.1), transparent);
+            bottom: -100px; right: -100px;
+            animation-delay: -4s;
+        }
+        .orb-3 {
+            width: 300px; height: 300px;
+            background: radial-gradient(circle, rgba(139,92,246,0.1), transparent);
+            top: 50%; left: 50%;
+            transform: translate(-50%, -50%);
+            animation-delay: -2s;
+        }
+        @keyframes orbFloat {
+            0%, 100% { transform: translate(0, 0) scale(1); }
+            33% { transform: translate(20px, -20px) scale(1.05); }
+            66% { transform: translate(-15px, 15px) scale(0.95); }
+        }
+
+        /* ── Container ── */
         .container {
-            background: rgba(255, 255, 255, 0.05);
-            backdrop-filter: blur(20px);
-            border-radius: 24px;
-            border: 1px solid rgba(255, 255, 255, 0.1);
-            padding: 40px;
-            max-width: 600px;
+            position: relative;
+            z-index: 1;
+            background: rgba(255,255,255,0.03);
+            backdrop-filter: blur(24px);
+            -webkit-backdrop-filter: blur(24px);
+            border-radius: 28px;
+            border: 1px solid var(--border);
+            padding: 44px;
+            max-width: 620px;
             width: 100%;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
-            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+            box-shadow:
+                0 0 0 1px rgba(255,255,255,0.03),
+                0 20px 60px rgba(0,0,0,0.5),
+                0 0 80px rgba(99,102,241,0.05);
+            animation: slideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
         }
 
         @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
+            from { opacity: 0; transform: translateY(40px) scale(0.97); }
+            to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
+        /* ── Header ── */
+        .header {
+            display: flex;
+            align-items: center;
+            gap: 16px;
+            margin-bottom: 10px;
+        }
+        .logo-icon {
+            width: 52px; height: 52px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 16px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            font-size: 24px;
+            flex-shrink: 0;
+            box-shadow: 0 8px 24px rgba(99,102,241,0.4);
+        }
         h1 {
-            font-size: 32px;
-            font-weight: 700;
-            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            font-size: 28px;
+            font-weight: 800;
+            background: linear-gradient(135deg, #e0e7ff, #a5b4fc, #67e8f9);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
             background-clip: text;
-            margin-bottom: 12px;
             letter-spacing: -0.5px;
+            line-height: 1.2;
         }
-
         .subtitle {
-            color: #94a3b8;
-            font-size: 15px;
-            margin-bottom: 32px;
-            font-weight: 400;
+            color: var(--text-mid);
+            font-size: 14px;
+            margin-top: 2px;
         }
 
+        /* ── Divider ── */
+        .divider {
+            height: 1px;
+            background: linear-gradient(90deg, transparent, var(--border), transparent);
+            margin: 28px 0;
+        }
+
+        /* ── Steps indicator ── */
+        .steps {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            margin-bottom: 28px;
+        }
+        .step {
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-dim);
+            transition: color 0.3s;
+        }
+        .step.active { color: var(--primary-light); }
+        .step.done { color: var(--success); }
+        .step-num {
+            width: 22px; height: 22px;
+            border-radius: 50%;
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 11px;
+            transition: all 0.3s;
+        }
+        .step.active .step-num {
+            background: var(--primary);
+            border-color: var(--primary);
+            color: white;
+            box-shadow: 0 0 12px rgba(99,102,241,0.5);
+        }
+        .step.done .step-num {
+            background: var(--success);
+            border-color: var(--success);
+            color: white;
+        }
+        .step-line {
+            flex: 1;
+            height: 1px;
+            background: rgba(255,255,255,0.06);
+            transition: background 0.3s;
+        }
+        .step-line.done { background: var(--success); }
+
+        /* ── Upload area ── */
         .upload-area {
-            border: 2px dashed rgba(96, 165, 250, 0.3);
-            border-radius: 16px;
-            padding: 40px 20px;
+            border: 2px dashed rgba(99,102,241,0.25);
+            border-radius: 20px;
+            padding: 44px 24px;
             text-align: center;
-            background: rgba(59, 130, 246, 0.05);
+            background: rgba(99,102,241,0.04);
             cursor: pointer;
-            transition: all 0.3s ease;
-            margin-bottom: 24px;
+            transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+            margin-bottom: 20px;
             position: relative;
             overflow: hidden;
         }
-
-        .upload-area:hover {
-            border-color: rgba(96, 165, 250, 0.6);
-            background: rgba(59, 130, 246, 0.1);
-            transform: translateY(-2px);
-        }
-
-        .upload-area::before {
+        .upload-area::after {
             content: '';
             position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
+            inset: 0;
+            background: radial-gradient(circle at center, rgba(99,102,241,0.08), transparent 70%);
             opacity: 0;
-            transition: opacity 0.3s ease;
+            transition: opacity 0.3s;
         }
-
-        .upload-area:hover::before {
-            opacity: 1;
+        .upload-area:hover {
+            border-color: rgba(99,102,241,0.6);
+            background: rgba(99,102,241,0.08);
+            transform: translateY(-3px);
+            box-shadow: 0 12px 40px rgba(99,102,241,0.15);
         }
-
-        .upload-icon {
-            font-size: 48px;
-            margin-bottom: 16px;
-            display: block;
+        .upload-area:hover::after { opacity: 1; }
+        .upload-area.drag-over {
+            border-color: var(--primary);
+            background: rgba(99,102,241,0.12);
+            transform: scale(1.02);
+            box-shadow: 0 0 0 4px rgba(99,102,241,0.1), 0 12px 40px rgba(99,102,241,0.2);
         }
+        .upload-area.has-file {
+            border-color: rgba(16,185,129,0.4);
+            background: rgba(16,185,129,0.05);
+            padding: 24px;
+        }
+        #fileInput { display: none; }
 
-        .upload-text {
-            color: #cbd5e1;
+        .upload-icon-wrap {
+            width: 72px; height: 72px;
+            background: rgba(99,102,241,0.1);
+            border-radius: 20px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 32px;
+            margin: 0 auto 16px;
+            transition: all 0.3s;
+        }
+        .upload-area:hover .upload-icon-wrap {
+            background: rgba(99,102,241,0.2);
+            transform: scale(1.05);
+        }
+        .upload-area.has-file .upload-icon-wrap {
+            background: rgba(16,185,129,0.15);
+            font-size: 26px;
+        }
+        .upload-title {
             font-size: 16px;
-            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--text);
+            margin-bottom: 6px;
+        }
+        .upload-sub {
+            font-size: 13px;
+            color: var(--text-dim);
+            margin-bottom: 16px;
+        }
+        .upload-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(99,102,241,0.2);
+            border-radius: 20px;
+            padding: 4px 12px;
+            font-size: 12px;
+            color: var(--primary-light);
             font-weight: 500;
         }
-
-        .upload-hint {
-            color: #64748b;
-            font-size: 13px;
-        }
-
-        #fileInput {
+        .file-details {
             display: none;
         }
-
-        .file-info {
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            border-radius: 12px;
-            padding: 16px;
-            margin-bottom: 24px;
-            display: none;
+        .file-details.show {
+            display: flex;
             align-items: center;
             gap: 12px;
         }
-
-        .file-info.show {
-            display: flex;
-            animation: fadeIn 0.4s ease;
-        }
-
-        @keyframes fadeIn {
-            from { opacity: 0; transform: scale(0.95); }
-            to { opacity: 1; transform: scale(1); }
-        }
-
-        .file-icon {
-            font-size: 28px;
-        }
-
-        .file-name {
-            flex: 1;
-            color: #e2e8f0;
+        .file-info-text { flex: 1; text-align: left; }
+        .file-name-display {
+            font-weight: 600;
             font-size: 14px;
-            font-weight: 500;
+            color: var(--text);
+            white-space: nowrap;
             overflow: hidden;
             text-overflow: ellipsis;
+            max-width: 320px;
+        }
+        .file-size-display {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 2px;
+        }
+        .file-change-btn {
+            background: rgba(255,255,255,0.05);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px;
+            color: var(--text-mid);
+            font-size: 12px;
+            padding: 6px 12px;
+            cursor: pointer;
+            transition: all 0.2s;
             white-space: nowrap;
         }
-
-        .form-group {
-            margin-bottom: 24px;
+        .file-change-btn:hover {
+            background: rgba(255,255,255,0.08);
+            color: var(--text);
         }
 
-        label {
-            display: block;
-            color: #cbd5e1;
-            font-size: 14px;
-            font-weight: 500;
-            margin-bottom: 8px;
+        /* ── Sezione form ── */
+        .form-section {
+            animation: fadeUp 0.4s ease both;
+        }
+        @keyframes fadeUp {
+            from { opacity: 0; transform: translateY(12px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+
+        .section-label {
+            font-size: 11px;
+            font-weight: 700;
+            letter-spacing: 1px;
+            text-transform: uppercase;
+            color: var(--text-dim);
+            margin-bottom: 12px;
         }
 
         .input-row {
             display: grid;
             grid-template-columns: 1fr 1fr;
-            gap: 16px;
+            gap: 12px;
+            margin-bottom: 16px;
         }
 
+        .input-group {
+            position: relative;
+        }
+        .input-group label {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--text-mid);
+            margin-bottom: 6px;
+        }
+        .input-wrap {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+        .input-prefix {
+            position: absolute;
+            left: 14px;
+            font-size: 13px;
+            color: var(--text-dim);
+            pointer-events: none;
+            z-index: 1;
+        }
         input[type="number"],
         input[type="text"] {
             width: 100%;
-            padding: 12px 16px;
-            background: rgba(15, 23, 42, 0.6);
-            border: 1px solid rgba(148, 163, 184, 0.2);
+            padding: 12px 16px 12px 36px;
+            background: rgba(15,20,40,0.6);
+            border: 1px solid rgba(255,255,255,0.07);
             border-radius: 12px;
-            color: #f1f5f9;
+            color: var(--text);
             font-size: 15px;
-            transition: all 0.3s ease;
+            font-family: 'Inter', sans-serif;
+            font-weight: 500;
+            transition: all 0.25s;
             outline: none;
         }
-
+        input[type="text"] { padding-left: 16px; }
         input[type="number"]:focus,
         input[type="text"]:focus {
-            border-color: #60a5fa;
-            background: rgba(15, 23, 42, 0.8);
-            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+            border-color: var(--primary);
+            background: rgba(15,20,40,0.9);
+            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
         }
+        input::placeholder { color: var(--text-dim); font-size: 13px; }
+        input::-webkit-inner-spin-button { opacity: 0.3; }
 
-        input[type="number"]::placeholder,
-        input[type="text"]::placeholder {
-            color: #64748b;
+        /* Hint pagine */
+        .pages-hint {
+            font-size: 11px;
+            color: var(--text-dim);
+            margin-top: 6px;
+            display: flex;
+            align-items: center;
+            gap: 4px;
         }
+        .pages-hint.valid { color: var(--success); }
+        .pages-hint.invalid { color: var(--error); }
 
-        .btn {
-            width: 100%;
-            padding: 14px 24px;
-            border: none;
-            border-radius: 12px;
-            font-size: 16px;
+        /* ── Output name row ── */
+        .output-row {
+            margin-bottom: 0;
+        }
+        .output-input-wrap {
+            display: flex;
+            align-items: center;
+            gap: 0;
+        }
+        .output-input-wrap input {
+            border-radius: 12px 0 0 12px;
+            border-right: none;
+            flex: 1;
+            padding-left: 16px;
+        }
+        .output-suffix {
+            background: rgba(99,102,241,0.1);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-left: none;
+            border-radius: 0 12px 12px 0;
+            padding: 12px 14px;
+            font-size: 14px;
             font-weight: 600;
-            cursor: pointer;
-            transition: all 0.3s ease;
+            color: var(--primary-light);
+            white-space: nowrap;
+        }
+
+        /* ── Bottone ── */
+        .btn-wrap {
+            margin-top: 28px;
             position: relative;
+        }
+        .btn-glow {
+            position: absolute;
+            inset: -2px;
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border-radius: 14px;
+            filter: blur(12px);
+            opacity: 0;
+            transition: opacity 0.3s;
+            z-index: 0;
+        }
+        .btn {
+            position: relative;
+            z-index: 1;
+            width: 100%;
+            padding: 16px 24px;
+            border: none;
+            border-radius: 14px;
+            font-size: 16px;
+            font-weight: 700;
+            font-family: 'Inter', sans-serif;
+            cursor: pointer;
+            transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            letter-spacing: 0.2px;
+        }
+        .btn-primary {
+            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 50%, var(--accent) 100%);
+            background-size: 200% 200%;
+            color: white;
+            box-shadow: 0 4px 24px rgba(99,102,241,0.35);
+        }
+        .btn-primary:hover:not(:disabled) {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 32px rgba(99,102,241,0.5);
+            background-position: right center;
+        }
+        .btn-wrap:hover .btn-glow { opacity: 0.6; }
+        .btn-primary:active:not(:disabled) { transform: translateY(0); }
+        .btn:disabled {
+            opacity: 0.4;
+            cursor: not-allowed;
+        }
+
+        /* Spinner */
+        .spinner {
+            width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,0.3);
+            border-top-color: white;
+            border-radius: 50%;
+            animation: spin 0.7s linear infinite;
+            display: none;
+        }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .btn.loading .spinner { display: block; }
+        .btn.loading .btn-text { opacity: 0.7; }
+
+        /* Progress bar */
+        .progress-wrap {
+            margin-top: 16px;
+            display: none;
+        }
+        .progress-wrap.show { display: block; }
+        .progress-bar-bg {
+            height: 4px;
+            background: rgba(255,255,255,0.06);
+            border-radius: 4px;
             overflow: hidden;
         }
-
-        .btn-primary {
-            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
-            color: white;
-            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        .progress-bar-fill {
+            height: 100%;
+            background: linear-gradient(90deg, var(--primary), var(--accent));
+            border-radius: 4px;
+            width: 0%;
+            transition: width 0.3s ease;
+            animation: progressPulse 1.5s ease-in-out infinite;
+        }
+        @keyframes progressPulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+        .progress-label {
+            font-size: 12px;
+            color: var(--text-dim);
+            margin-top: 8px;
+            text-align: center;
         }
 
-        .btn-primary:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+        /* ── Toast ── */
+        .toast-container {
+            position: fixed;
+            bottom: 24px;
+            right: 24px;
+            z-index: 1000;
+            display: flex;
+            flex-direction: column;
+            gap: 10px;
         }
-
-        .btn-primary:active {
-            transform: translateY(0);
-        }
-
-        .btn:disabled {
-            opacity: 0.5;
-            cursor: not-allowed;
-            transform: none !important;
-        }
-
-        .output {
-            margin-top: 24px;
-            padding: 16px;
-            background: rgba(34, 197, 94, 0.1);
-            border: 1px solid rgba(34, 197, 94, 0.3);
-            border-radius: 12px;
-            display: none;
-            animation: fadeIn 0.4s ease;
-        }
-
-        .output.show {
-            display: block;
-        }
-
-        .output.error {
-            background: rgba(239, 68, 68, 0.1);
-            border-color: rgba(239, 68, 68, 0.3);
-        }
-
-        .output-text {
-            color: #e2e8f0;
+        .toast {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            padding: 14px 18px;
+            background: rgba(15,20,40,0.95);
+            backdrop-filter: blur(20px);
+            border-radius: 14px;
+            border: 1px solid rgba(255,255,255,0.08);
+            box-shadow: 0 8px 32px rgba(0,0,0,0.4);
+            animation: toastIn 0.4s cubic-bezier(0.16,1,0.3,1);
+            max-width: 340px;
             font-size: 14px;
-            line-height: 1.6;
+            font-weight: 500;
+        }
+        @keyframes toastIn {
+            from { opacity: 0; transform: translateX(20px) scale(0.95); }
+            to   { opacity: 1; transform: translateX(0) scale(1); }
+        }
+        @keyframes toastOut {
+            to { opacity: 0; transform: translateX(20px) scale(0.95); }
+        }
+        .toast-icon { font-size: 18px; flex-shrink: 0; }
+        .toast.success { border-color: rgba(16,185,129,0.3); }
+        .toast.error   { border-color: rgba(239,68,68,0.3); }
+        .toast.info    { border-color: rgba(99,102,241,0.3); }
+
+        /* ── Success card ── */
+        .success-card {
+            display: none;
+            margin-top: 20px;
+            padding: 20px;
+            background: rgba(16,185,129,0.06);
+            border: 1px solid rgba(16,185,129,0.2);
+            border-radius: 16px;
+            animation: fadeUp 0.4s ease;
+        }
+        .success-card.show { display: block; }
+        .success-header {
+            display: flex;
+            align-items: center;
+            gap: 12px;
+            margin-bottom: 14px;
+        }
+        .success-icon {
+            width: 40px; height: 40px;
+            background: rgba(16,185,129,0.15);
+            border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 20px;
+        }
+        .success-title {
+            font-size: 15px;
+            font-weight: 700;
+            color: #6ee7b7;
+        }
+        .success-sub {
+            font-size: 12px;
+            color: var(--text-dim);
+        }
+        .success-stats {
+            display: grid;
+            grid-template-columns: 1fr 1fr 1fr;
+            gap: 10px;
+        }
+        .stat-item {
+            background: rgba(255,255,255,0.03);
+            border: 1px solid rgba(255,255,255,0.06);
+            border-radius: 10px;
+            padding: 10px 12px;
+            text-align: center;
+        }
+        .stat-val {
+            font-size: 18px;
+            font-weight: 700;
+            color: var(--text);
+        }
+        .stat-lbl {
+            font-size: 10px;
+            color: var(--text-dim);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+            margin-top: 2px;
         }
 
-        .info-box {
-            background: rgba(59, 130, 246, 0.1);
-            border: 1px solid rgba(59, 130, 246, 0.2);
-            border-radius: 12px;
-            padding: 16px;
-            margin-top: 24px;
+        /* ── Footer ── */
+        .footer {
+            margin-top: 28px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border);
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            gap: 12px;
         }
-
-        .info-box p {
-            color: #94a3b8;
-            font-size: 13px;
-            line-height: 1.6;
+        .footer-text {
+            font-size: 12px;
+            color: var(--text-dim);
         }
-
-        .info-box strong {
-            color: #cbd5e1;
+        .footer-badge {
+            display: inline-flex;
+            align-items: center;
+            gap: 5px;
+            font-size: 11px;
+            color: var(--text-dim);
+            background: rgba(255,255,255,0.04);
+            border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 20px;
+            padding: 4px 10px;
         }
+        .footer-badge span { color: var(--primary-light); }
 
+        /* ── Responsive ── */
         @media (max-width: 640px) {
-            .container {
-                padding: 24px;
-            }
-
-            h1 {
-                font-size: 24px;
-            }
-
-            .input-row {
-                grid-template-columns: 1fr;
-            }
+            .container { padding: 24px; border-radius: 20px; }
+            h1 { font-size: 22px; }
+            .input-row { grid-template-columns: 1fr; }
+            .success-stats { grid-template-columns: 1fr 1fr; }
+            .steps { display: none; }
         }
     </style>
 </head>
 <body>
-    <div class="container">
-        <h1>📄 PDF Page Extractor</h1>
-        <p class="subtitle">Estrai pagine specifiche dai tuoi documenti PDF</p>
 
-        <div class="upload-area" id="uploadArea">
-            <span class="upload-icon">📁</span>
-            <p class="upload-text">Clicca o trascina qui il tuo PDF</p>
-            <p class="upload-hint">Supporta file PDF fino a 50MB</p>
-            <input type="file" id="fileInput" accept=".pdf">
-        </div>
+<!-- Orbs di sfondo -->
+<div class="bg-orbs">
+    <div class="orb orb-1"></div>
+    <div class="orb orb-2"></div>
+    <div class="orb orb-3"></div>
+</div>
 
-        <div class="file-info" id="fileInfo">
-            <span class="file-icon">📄</span>
-            <span class="file-name" id="fileName"></span>
-        </div>
+<!-- Toast container -->
+<div class="toast-container" id="toastContainer"></div>
 
-        <div class="form-group">
-            <div class="input-row">
-                <div>
-                    <label for="fromPage">Pagina iniziale</label>
-                    <input type="number" id="fromPage" min="1" placeholder="Es: 33" value="33">
-                </div>
-                <div>
-                    <label for="toPage">Pagina finale</label>
-                    <input type="number" id="toPage" min="1" placeholder="Es: 39" value="39">
-                </div>
-            </div>
-        </div>
+<div class="container">
 
-        <div class="form-group">
-            <label for="outputName">Nome file output</label>
-            <input type="text" id="outputName" placeholder="Es: boltzmann_eq" value="boltzmann_eq">
-        </div>
-
-        <button class="btn btn-primary" id="extractBtn" disabled>
-            Estrai Pagine
-        </button>
-
-        <div class="output" id="output">
-            <p class="output-text" id="outputText"></p>
-        </div>
-
-        <div class="info-box">
-            <p><strong>💡 Come funziona:</strong></p>
-            <p>Questo tool usa un backend Python con PyMuPDF per estrarre le pagine. Seleziona il PDF, imposta le pagine da estrarre e scarica il risultato.</p>
+    <!-- Header -->
+    <div class="header">
+        <div class="logo-icon">📄</div>
+        <div>
+            <h1>PDF Extractor</h1>
+            <div class="subtitle">Estrai pagine specifiche dai tuoi documenti</div>
         </div>
     </div>
 
-    <script>
-        const API_URL = "https://pdf-extractor-api-duyo.onrender.com";
+    <div class="divider"></div>
 
-        const uploadArea = document.getElementById('uploadArea');
-        const fileInput = document.getElementById('fileInput');
-        const fileInfo = document.getElementById('fileInfo');
-        const fileName = document.getElementById('fileName');
-        const extractBtn = document.getElementById('extractBtn');
-        const output = document.getElementById('output');
-        const outputText = document.getElementById('outputText');
-        const fromPage = document.getElementById('fromPage');
-        const toPage = document.getElementById('toPage');
-        const outputName = document.getElementById('outputName');
+    <!-- Steps -->
+    <div class="steps" id="stepsBar">
+        <div class="step active" id="step1">
+            <div class="step-num">1</div>
+            <span>Carica</span>
+        </div>
+        <div class="step-line" id="line1"></div>
+        <div class="step" id="step2">
+            <div class="step-num">2</div>
+            <span>Configura</span>
+        </div>
+        <div class="step-line" id="line2"></div>
+        <div class="step" id="step3">
+            <div class="step-num">3</div>
+            <span>Scarica</span>
+        </div>
+    </div>
 
-        let selectedFile = null;
+    <!-- Upload area -->
+    <div class="upload-area" id="uploadArea">
+        <input type="file" id="fileInput" accept=".pdf">
 
-        // Upload area click
-        uploadArea.addEventListener('click', () => fileInput.click());
+        <!-- Stato default -->
+        <div id="uploadDefault">
+            <div class="upload-icon-wrap">📁</div>
+            <div class="upload-title">Trascina qui il tuo PDF</div>
+            <div class="upload-sub">oppure clicca per sfogliare</div>
+            <div class="upload-badge">
+                <span>📎</span> PDF · Max 50MB
+            </div>
+        </div>
 
-        // Drag and drop
-        uploadArea.addEventListener('dragover', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.8)';
-        });
+        <!-- Stato file selezionato -->
+        <div class="file-details" id="fileDetails">
+            <div class="upload-icon-wrap">✅</div>
+            <div class="file-info-text">
+                <div class="file-name-display" id="fileNameDisplay"></div>
+                <div class="file-size-display" id="fileSizeDisplay"></div>
+            </div>
+            <button class="file-change-btn" onclick="changeFile(event)">Cambia</button>
+        </div>
+    </div>
 
-        uploadArea.addEventListener('dragleave', () => {
-            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.3)';
-        });
+    <!-- Form sezione (visibile dopo file selezionato) -->
+    <div class="form-section" id="formSection" style="display:none;">
 
-        uploadArea.addEventListener('drop', (e) => {
-            e.preventDefault();
-            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.3)';
-            const files = e.dataTransfer.files;
-            if (files.length > 0 && files[0].type === 'application/pdf') {
-                handleFile(files[0]);
-            } else {
-                showOutput('Seleziona un file PDF valido', true);
-            }
-        });
+        <div class="section-label">Intervallo pagine</div>
+        <div class="input-row">
+            <div class="input-group">
+                <label for="fromPage">Pagina iniziale</label>
+                <div class="input-wrap">
+                    <span class="input-prefix">#</span>
+                    <input type="number" id="fromPage" min="1" placeholder="1" value="1">
+                </div>
+            </div>
+            <div class="input-group">
+                <label for="toPage">Pagina finale</label>
+                <div class="input-wrap">
+                    <span class="input-prefix">#</span>
+                    <input type="number" id="toPage" min="1" placeholder="10" value="10">
+                </div>
+            </div>
+        </div>
+        <div class="pages-hint" id="pagesHint">
+            <span>ℹ️</span> <span id="pagesHintText">Inserisci l'intervallo di pagine da estrarre</span>
+        </div>
 
-        // File input change
-        fileInput.addEventListener('change', (e) => {
-            if (e.target.files.length > 0) {
-                handleFile(e.target.files[0]);
-            }
-        });
+        <div class="divider" style="margin: 20px 0;"></div>
 
-        function handleFile(file) {
-            if (file.size > 50 * 1024 * 1024) {
-                showOutput('Il file è troppo grande (max 50MB)', true);
-                return;
-            }
+        <div class="section-label" style="margin-top:0;">Nome file output</div>
+        <div class="output-row">
+            <div class="output-input-wrap">
+                <input type="text" id="outputName" placeholder="es. capitolo_1" value="estratto">
+                <div class="output-suffix">.pdf</div>
+            </div>
+        </div>
 
-            selectedFile = file;
-            fileName.textContent = file.name;
-            fileInfo.classList.add('show');
+        <!-- Bottone -->
+        <div class="btn-wrap">
+            <div class="btn-glow"></div>
+            <button class="btn btn-primary" id="extractBtn">
+                <div class="spinner"></div>
+                <span class="btn-text">✂️&nbsp; Estrai Pagine</span>
+            </button>
+        </div>
+
+        <!-- Progress -->
+        <div class="progress-wrap" id="progressWrap">
+            <div class="progress-bar-bg">
+                <div class="progress-bar-fill" id="progressFill"></div>
+            </div>
+            <div class="progress-label" id="progressLabel">Connessione al server...</div>
+        </div>
+
+        <!-- Success card -->
+        <div class="success-card" id="successCard">
+            <div class="success-header">
+                <div class="success-icon">🎉</div>
+                <div>
+                    <div class="success-title">Estrazione completata!</div>
+                    <div class="success-sub" id="successSub">Il download è iniziato automaticamente</div>
+                </div>
+            </div>
+            <div class="success-stats" id="successStats"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <div class="footer">
+        <div class="footer-text">Nessun file viene salvato sui server</div>
+        <div class="footer-badge">⚡ <span>PyMuPDF</span> + Flask</div>
+    </div>
+
+</div>
+
+<script>
+    const API_URL = "https://pdf-extractor-api-duyo.onrender.com";
+
+    const uploadArea   = document.getElementById('uploadArea');
+    const fileInput    = document.getElementById('fileInput');
+    const uploadDefault = document.getElementById('uploadDefault');
+    const fileDetails  = document.getElementById('fileDetails');
+    const fileNameDisp = document.getElementById('fileNameDisplay');
+    const fileSizeDisp = document.getElementById('fileSizeDisplay');
+    const formSection  = document.getElementById('formSection');
+    const extractBtn   = document.getElementById('extractBtn');
+    const fromPage     = document.getElementById('fromPage');
+    const toPage       = document.getElementById('toPage');
+    const outputName   = document.getElementById('outputName');
+    const progressWrap = document.getElementById('progressWrap');
+    const progressFill = document.getElementById('progressFill');
+    const progressLabel= document.getElementById('progressLabel');
+    const successCard  = document.getElementById('successCard');
+    const pagesHint    = document.getElementById('pagesHint');
+    const pagesHintTxt = document.getElementById('pagesHintText');
+
+    let selectedFile = null;
+    let extractionCount = 0;
+
+    // ── Upload area ──
+    uploadArea.addEventListener('click', () => fileInput.click());
+
+    uploadArea.addEventListener('dragover', (e) => {
+        e.preventDefault();
+        uploadArea.classList.add('drag-over');
+    });
+    uploadArea.addEventListener('dragleave', () => {
+        uploadArea.classList.remove('drag-over');
+    });
+    uploadArea.addEventListener('drop', (e) => {
+        e.preventDefault();
+        uploadArea.classList.remove('drag-over');
+        const f = e.dataTransfer.files[0];
+        if (f && f.type === 'application/pdf') handleFile(f);
+        else showToast('Seleziona un file PDF valido', 'error');
+    });
+    fileInput.addEventListener('change', (e) => {
+        if (e.target.files[0]) handleFile(e.target.files[0]);
+    });
+
+    function changeFile(e) {
+        e.stopPropagation();
+        fileInput.click();
+    }
+
+    function formatSize(bytes) {
+        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
+        return (bytes / 1024 / 1024).toFixed(1) + ' MB';
+    }
+
+    function handleFile(file) {
+        if (file.size > 50 * 1024 * 1024) {
+            showToast('File troppo grande (max 50MB)', 'error');
+            return;
+        }
+        selectedFile = file;
+
+        // Aggiorna UI upload
+        uploadDefault.style.display = 'none';
+        fileDetails.classList.add('show');
+        uploadArea.classList.add('has-file');
+        fileNameDisp.textContent = file.name;
+        fileSizeDisp.textContent = formatSize(file.size);
+
+        // Mostra form
+        formSection.style.display = 'block';
+
+        // Aggiorna steps
+        setStep(2);
+
+        // Reset stato
+        successCard.classList.remove('show');
+        progressWrap.classList.remove('show');
+
+        showToast('PDF caricato con successo', 'success');
+    }
+
+    // ── Steps ──
+    function setStep(n) {
+        for (let i = 1; i <= 3; i++) {
+            const s = document.getElementById(`step${i}`);
+            s.className = 'step';
+            if (i < n) s.classList.add('done'), s.querySelector('.step-num').textContent = '✓';
+            else if (i === n) s.classList.add('active'), s.querySelector('.step-num').textContent = i;
+            else s.querySelector('.step-num').textContent = i;
+        }
+        for (let i = 1; i <= 2; i++) {
+            const l = document.getElementById(`line${i}`);
+            l.className = 'step-line' + (i < n ? ' done' : '');
+        }
+    }
+
+    // ── Validazione live ──
+    [fromPage, toPage].forEach(inp => inp.addEventListener('input', validatePages));
+
+    function validatePages() {
+        const f = parseInt(fromPage.value);
+        const t = parseInt(toPage.value);
+        if (!f || !t) {
+            pagesHint.className = 'pages-hint';
+            pagesHintTxt.textContent = 'Inserisci l\'intervallo di pagine da estrarre';
+            return;
+        }
+        if (f < 1) {
+            pagesHint.className = 'pages-hint invalid';
+            pagesHintTxt.textContent = '⚠️ La pagina iniziale deve essere ≥ 1';
+            return;
+        }
+        if (t < f) {
+            pagesHint.className = 'pages-hint invalid';
+            pagesHintTxt.textContent = '⚠️ La pagina finale deve essere ≥ pagina iniziale';
+            return;
+        }
+        const n = t - f + 1;
+        pagesHint.className = 'pages-hint valid';
+        pagesHintTxt.textContent = `✅ Verranno estratte ${n} pagine (${f}→${t})`;
+    }
+
+    // ── Estrazione ──
+    extractBtn.addEventListener('click', async () => {
+        if (!selectedFile) return;
+
+        const from = parseInt(fromPage.value);
+        const to   = parseInt(toPage.value);
+        const name = outputName.value.trim() || 'estratto';
+
+        if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+            showToast('Intervallo pagine non valido', 'error');
+            return;
+        }
+
+        // UI loading
+        extractBtn.classList.add('loading');
+        extractBtn.disabled = true;
+        extractBtn.querySelector('.btn-text').textContent = 'Elaborazione...';
+        progressWrap.classList.add('show');
+        successCard.classList.remove('show');
+        setStep(3);
+
+        // Progress simulato
+        let prog = 0;
+        const progInterval = setInterval(() => {
+            prog = Math.min(prog + Math.random() * 8, 85);
+            progressFill.style.width = prog + '%';
+            if (prog < 30) progressLabel.textContent = 'Connessione al server...';
+            else if (prog < 60) progressLabel.textContent = 'Elaborazione PDF...';
+            else progressLabel.textContent = 'Quasi pronto...';
+        }, 300);
+
+        try {
+            await extractPDF(from, to, name);
+
+            clearInterval(progInterval);
+            progressFill.style.width = '100%';
+            progressLabel.textContent = 'Completato!';
+
+            setTimeout(() => progressWrap.classList.remove('show'), 800);
+
+            extractionCount++;
+            showSuccessCard(from, to, name);
+            showToast(`✅ ${to - from + 1} pagine estratte!`, 'success');
+            setStep(3);
+            document.getElementById('step3').classList.add('done');
+            document.getElementById('step3').querySelector('.step-num').textContent = '✓';
+
+        } catch (err) {
+            clearInterval(progInterval);
+            progressWrap.classList.remove('show');
+            showToast(`Errore: ${err.message}`, 'error');
+            setStep(2);
+        } finally {
+            extractBtn.classList.remove('loading');
             extractBtn.disabled = false;
-            output.classList.remove('show');
+            extractBtn.querySelector('.btn-text').textContent = '✂️\u00a0 Estrai Pagine';
         }
+    });
 
-        extractBtn.addEventListener('click', async () => {
-            if (!selectedFile) return;
+    async function extractPDF(from, to, name) {
+        const formData = new FormData();
+        formData.append('file', selectedFile);
+        formData.append('from_page', from);
+        formData.append('to_page', to);
+        formData.append('output_name', name);
 
-            const from = parseInt(fromPage.value);
-            const to = parseInt(toPage.value);
-            const name = outputName.value || 'output';
-
-            if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
-                showOutput('Verifica i numeri di pagina (da >= 1, a >= da)', true);
-                return;
-            }
-
-            extractBtn.disabled = true;
-            extractBtn.textContent = 'Elaborazione...';
-
-            try {
-                await extractPDF(from, to, name);
-                showOutput(`✅ Pagine ${from}-${to} estratte con successo! Il download è iniziato.`, false);
-            } catch (error) {
-                showOutput(`❌ Errore: ${error.message}`, true);
-            } finally {
-                extractBtn.disabled = false;
-                extractBtn.textContent = 'Estrai Pagine';
-            }
+        const response = await fetch(`${API_URL}/extract`, {
+            method: 'POST',
+            body: formData
         });
 
-        async function extractPDF(from, to, name) {
-            const formData = new FormData();
-            formData.append('file', selectedFile);
-            formData.append('from_page', from);
-            formData.append('to_page', to);
-            formData.append('output_name', name);
-
-            const response = await fetch(`${API_URL}/extract`, {
-                method: 'POST',
-                body: formData
-            });
-
-            if (!response.ok) {
-                let errText = 'Errore sconosciuto';
-                try {
-                    const err = await response.json();
-                    errText = err.error || errText;
-                } catch (_) {}
-                throw new Error(errText);
-            }
-
-            const blob = await response.blob();
-            const url = URL.createObjectURL(blob);
-            const a = document.createElement('a');
-            a.href = url;
-            a.download = `${name}.pdf`;
-            document.body.appendChild(a);
-            a.click();
-            a.remove();
-            URL.revokeObjectURL(url);
+        if (!response.ok) {
+            let errText = 'Errore sconosciuto';
+            try { const e = await response.json(); errText = e.error || errText; } catch(_) {}
+            throw new Error(errText);
         }
 
-        function showOutput(message, isError) {
-            output.classList.add('show');
-            output.classList.toggle('error', isError);
-            outputText.textContent = message;
-        }
-    </script>
+        const blob = await response.blob();
+        const url  = URL.createObjectURL(blob);
+        const a    = document.createElement('a');
+        a.href     = url;
+        a.download = `${name}.pdf`;
+        document.body.appendChild(a);
+        a.click();
+        a.remove();
+        URL.revokeObjectURL(url);
+    }
+
+    function showSuccessCard(from, to, name) {
+        const n = to - from + 1;
+        document.getElementById('successSub').textContent =
+            `"${name}.pdf" scaricato automaticamente`;
+        document.getElementById('successStats').innerHTML = `
+            <div class="stat-item">
+                <div class="stat-val">${n}</div>
+                <div class="stat-lbl">Pagine</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">${from}–${to}</div>
+                <div class="stat-lbl">Intervallo</div>
+            </div>
+            <div class="stat-item">
+                <div class="stat-val">${extractionCount}</div>
+                <div class="stat-lbl">Estrazioni</div>
+            </div>
+        `;
+        successCard.classList.add('show');
+    }
+
+    // ── Toast system ──
+    function showToast(msg, type = 'info') {
+        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        const tc = document.getElementById('toastContainer');
+        const t  = document.createElement('div');
+        t.className = `toast ${type}`;
+        t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+        tc.appendChild(t);
+        setTimeout(() => {
+            t.style.animation = 'toastOut 0.3s ease forwards';
+            setTimeout(() => t.remove(), 300);
+        }, 3500);
+    }
+</script>
 </body>
 </html>
