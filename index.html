@@ -1,0 +1,467 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>PDF Page Extractor</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: linear-gradient(135deg, #0f172a 0%, #1e293b 50%, #334155 100%);
+            min-height: 100vh;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            padding: 20px;
+            color: #f1f5f9;
+        }
+
+        .container {
+            background: rgba(255, 255, 255, 0.05);
+            backdrop-filter: blur(20px);
+            border-radius: 24px;
+            border: 1px solid rgba(255, 255, 255, 0.1);
+            padding: 40px;
+            max-width: 600px;
+            width: 100%;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.4);
+            animation: slideIn 0.6s cubic-bezier(0.16, 1, 0.3, 1);
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            font-size: 32px;
+            font-weight: 700;
+            background: linear-gradient(135deg, #60a5fa, #a78bfa);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+            margin-bottom: 12px;
+            letter-spacing: -0.5px;
+        }
+
+        .subtitle {
+            color: #94a3b8;
+            font-size: 15px;
+            margin-bottom: 32px;
+            font-weight: 400;
+        }
+
+        .upload-area {
+            border: 2px dashed rgba(96, 165, 250, 0.3);
+            border-radius: 16px;
+            padding: 40px 20px;
+            text-align: center;
+            background: rgba(59, 130, 246, 0.05);
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin-bottom: 24px;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .upload-area:hover {
+            border-color: rgba(96, 165, 250, 0.6);
+            background: rgba(59, 130, 246, 0.1);
+            transform: translateY(-2px);
+        }
+
+        .upload-area::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: radial-gradient(circle, rgba(96, 165, 250, 0.1) 0%, transparent 70%);
+            opacity: 0;
+            transition: opacity 0.3s ease;
+        }
+
+        .upload-area:hover::before {
+            opacity: 1;
+        }
+
+        .upload-icon {
+            font-size: 48px;
+            margin-bottom: 16px;
+            display: block;
+        }
+
+        .upload-text {
+            color: #cbd5e1;
+            font-size: 16px;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+
+        .upload-hint {
+            color: #64748b;
+            font-size: 13px;
+        }
+
+        #fileInput {
+            display: none;
+        }
+
+        .file-info {
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 24px;
+            display: none;
+            align-items: center;
+            gap: 12px;
+        }
+
+        .file-info.show {
+            display: flex;
+            animation: fadeIn 0.4s ease;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: scale(0.95); }
+            to { opacity: 1; transform: scale(1); }
+        }
+
+        .file-icon {
+            font-size: 28px;
+        }
+
+        .file-name {
+            flex: 1;
+            color: #e2e8f0;
+            font-size: 14px;
+            font-weight: 500;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            white-space: nowrap;
+        }
+
+        .form-group {
+            margin-bottom: 24px;
+        }
+
+        label {
+            display: block;
+            color: #cbd5e1;
+            font-size: 14px;
+            font-weight: 500;
+            margin-bottom: 8px;
+        }
+
+        .input-row {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+        }
+
+        input[type="number"],
+        input[type="text"] {
+            width: 100%;
+            padding: 12px 16px;
+            background: rgba(15, 23, 42, 0.6);
+            border: 1px solid rgba(148, 163, 184, 0.2);
+            border-radius: 12px;
+            color: #f1f5f9;
+            font-size: 15px;
+            transition: all 0.3s ease;
+            outline: none;
+        }
+
+        input[type="number"]:focus,
+        input[type="text"]:focus {
+            border-color: #60a5fa;
+            background: rgba(15, 23, 42, 0.8);
+            box-shadow: 0 0 0 3px rgba(96, 165, 250, 0.1);
+        }
+
+        input[type="number"]::placeholder,
+        input[type="text"]::placeholder {
+            color: #64748b;
+        }
+
+        .btn {
+            width: 100%;
+            padding: 14px 24px;
+            border: none;
+            border-radius: 12px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .btn-primary {
+            background: linear-gradient(135deg, #3b82f6, #8b5cf6);
+            color: white;
+            box-shadow: 0 4px 20px rgba(59, 130, 246, 0.4);
+        }
+
+        .btn-primary:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 8px 30px rgba(59, 130, 246, 0.5);
+        }
+
+        .btn-primary:active {
+            transform: translateY(0);
+        }
+
+        .btn:disabled {
+            opacity: 0.5;
+            cursor: not-allowed;
+            transform: none !important;
+        }
+
+        .output {
+            margin-top: 24px;
+            padding: 16px;
+            background: rgba(34, 197, 94, 0.1);
+            border: 1px solid rgba(34, 197, 94, 0.3);
+            border-radius: 12px;
+            display: none;
+            animation: fadeIn 0.4s ease;
+        }
+
+        .output.show {
+            display: block;
+        }
+
+        .output.error {
+            background: rgba(239, 68, 68, 0.1);
+            border-color: rgba(239, 68, 68, 0.3);
+        }
+
+        .output-text {
+            color: #e2e8f0;
+            font-size: 14px;
+            line-height: 1.6;
+        }
+
+        .info-box {
+            background: rgba(59, 130, 246, 0.1);
+            border: 1px solid rgba(59, 130, 246, 0.2);
+            border-radius: 12px;
+            padding: 16px;
+            margin-top: 24px;
+        }
+
+        .info-box p {
+            color: #94a3b8;
+            font-size: 13px;
+            line-height: 1.6;
+        }
+
+        .info-box strong {
+            color: #cbd5e1;
+        }
+
+        @media (max-width: 640px) {
+            .container {
+                padding: 24px;
+            }
+
+            h1 {
+                font-size: 24px;
+            }
+
+            .input-row {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>📄 PDF Page Extractor</h1>
+        <p class="subtitle">Estrai pagine specifiche dai tuoi documenti PDF</p>
+
+        <div class="upload-area" id="uploadArea">
+            <span class="upload-icon">📁</span>
+            <p class="upload-text">Clicca o trascina qui il tuo PDF</p>
+            <p class="upload-hint">Supporta file PDF fino a 50MB</p>
+            <input type="file" id="fileInput" accept=".pdf">
+        </div>
+
+        <div class="file-info" id="fileInfo">
+            <span class="file-icon">📄</span>
+            <span class="file-name" id="fileName"></span>
+        </div>
+
+        <div class="form-group">
+            <div class="input-row">
+                <div>
+                    <label for="fromPage">Pagina iniziale</label>
+                    <input type="number" id="fromPage" min="1" placeholder="Es: 33" value="33">
+                </div>
+                <div>
+                    <label for="toPage">Pagina finale</label>
+                    <input type="number" id="toPage" min="1" placeholder="Es: 39" value="39">
+                </div>
+            </div>
+        </div>
+
+        <div class="form-group">
+            <label for="outputName">Nome file output</label>
+            <input type="text" id="outputName" placeholder="Es: boltzmann_eq" value="boltzmann_eq">
+        </div>
+
+        <button class="btn btn-primary" id="extractBtn" disabled>
+            Estrai Pagine
+        </button>
+
+        <div class="output" id="output">
+            <p class="output-text" id="outputText"></p>
+        </div>
+
+        <div class="info-box">
+            <p><strong>💡 Come funziona:</strong></p>
+            <p>Questo tool usa un backend Python con PyMuPDF per estrarre le pagine. Seleziona il PDF, imposta le pagine da estrarre e scarica il risultato.</p>
+        </div>
+    </div>
+
+    <script>
+        const API_URL = "https://pdf-extractor-api-duyo.onrender.com";
+
+        const uploadArea = document.getElementById('uploadArea');
+        const fileInput = document.getElementById('fileInput');
+        const fileInfo = document.getElementById('fileInfo');
+        const fileName = document.getElementById('fileName');
+        const extractBtn = document.getElementById('extractBtn');
+        const output = document.getElementById('output');
+        const outputText = document.getElementById('outputText');
+        const fromPage = document.getElementById('fromPage');
+        const toPage = document.getElementById('toPage');
+        const outputName = document.getElementById('outputName');
+
+        let selectedFile = null;
+
+        // Upload area click
+        uploadArea.addEventListener('click', () => fileInput.click());
+
+        // Drag and drop
+        uploadArea.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.8)';
+        });
+
+        uploadArea.addEventListener('dragleave', () => {
+            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.3)';
+        });
+
+        uploadArea.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadArea.style.borderColor = 'rgba(96, 165, 250, 0.3)';
+            const files = e.dataTransfer.files;
+            if (files.length > 0 && files[0].type === 'application/pdf') {
+                handleFile(files[0]);
+            } else {
+                showOutput('Seleziona un file PDF valido', true);
+            }
+        });
+
+        // File input change
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            if (file.size > 50 * 1024 * 1024) {
+                showOutput('Il file è troppo grande (max 50MB)', true);
+                return;
+            }
+
+            selectedFile = file;
+            fileName.textContent = file.name;
+            fileInfo.classList.add('show');
+            extractBtn.disabled = false;
+            output.classList.remove('show');
+        }
+
+        extractBtn.addEventListener('click', async () => {
+            if (!selectedFile) return;
+
+            const from = parseInt(fromPage.value);
+            const to = parseInt(toPage.value);
+            const name = outputName.value || 'output';
+
+            if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
+                showOutput('Verifica i numeri di pagina (da >= 1, a >= da)', true);
+                return;
+            }
+
+            extractBtn.disabled = true;
+            extractBtn.textContent = 'Elaborazione...';
+
+            try {
+                await extractPDF(from, to, name);
+                showOutput(`✅ Pagine ${from}-${to} estratte con successo! Il download è iniziato.`, false);
+            } catch (error) {
+                showOutput(`❌ Errore: ${error.message}`, true);
+            } finally {
+                extractBtn.disabled = false;
+                extractBtn.textContent = 'Estrai Pagine';
+            }
+        });
+
+        async function extractPDF(from, to, name) {
+            const formData = new FormData();
+            formData.append('file', selectedFile);
+            formData.append('from_page', from);
+            formData.append('to_page', to);
+            formData.append('output_name', name);
+
+            const response = await fetch(`${API_URL}/extract`, {
+                method: 'POST',
+                body: formData
+            });
+
+            if (!response.ok) {
+                let errText = 'Errore sconosciuto';
+                try {
+                    const err = await response.json();
+                    errText = err.error || errText;
+                } catch (_) {}
+                throw new Error(errText);
+            }
+
+            const blob = await response.blob();
+            const url = URL.createObjectURL(blob);
+            const a = document.createElement('a');
+            a.href = url;
+            a.download = `${name}.pdf`;
+            document.body.appendChild(a);
+            a.click();
+            a.remove();
+            URL.revokeObjectURL(url);
+        }
+
+        function showOutput(message, isError) {
+            output.classList.add('show');
+            output.classList.toggle('error', isError);
+            outputText.textContent = message;
+        }
+    </script>
+</body>
+</html>
