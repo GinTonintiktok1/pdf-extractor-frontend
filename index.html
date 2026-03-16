@@ -5,6 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>PDF Extractor</title>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.min.js"></script>
     <style>
         :root {
             --primary: #6366f1;
@@ -12,6 +13,7 @@
             --accent: #06b6d4;
             --success: #10b981;
             --error: #ef4444;
+            --warning: #f59e0b;
             --bg: #060612;
             --card: rgba(255,255,255,0.04);
             --border: rgba(255,255,255,0.08);
@@ -34,629 +36,442 @@
             overflow-x: hidden;
         }
 
-        /* ── Sfondo animato ── */
-        .bg-orbs {
-            position: fixed;
-            inset: 0;
-            pointer-events: none;
-            z-index: 0;
-            overflow: hidden;
-        }
-        .orb {
-            position: absolute;
-            border-radius: 50%;
-            filter: blur(80px);
-            animation: orbFloat 8s ease-in-out infinite;
-        }
-        .orb-1 {
-            width: 500px; height: 500px;
-            background: radial-gradient(circle, rgba(99,102,241,0.15), transparent);
-            top: -150px; left: -150px;
-            animation-delay: 0s;
-        }
-        .orb-2 {
-            width: 400px; height: 400px;
-            background: radial-gradient(circle, rgba(6,182,212,0.1), transparent);
-            bottom: -100px; right: -100px;
-            animation-delay: -4s;
-        }
-        .orb-3 {
-            width: 300px; height: 300px;
-            background: radial-gradient(circle, rgba(139,92,246,0.1), transparent);
-            top: 50%; left: 50%;
-            transform: translate(-50%, -50%);
-            animation-delay: -2s;
-        }
+        /* ── Sfondo ── */
+        .bg-orbs { position: fixed; inset: 0; pointer-events: none; z-index: 0; overflow: hidden; }
+        .orb { position: absolute; border-radius: 50%; filter: blur(80px); animation: orbFloat 8s ease-in-out infinite; }
+        .orb-1 { width: 500px; height: 500px; background: radial-gradient(circle, rgba(99,102,241,0.15), transparent); top: -150px; left: -150px; }
+        .orb-2 { width: 400px; height: 400px; background: radial-gradient(circle, rgba(6,182,212,0.1), transparent); bottom: -100px; right: -100px; animation-delay: -4s; }
+        .orb-3 { width: 300px; height: 300px; background: radial-gradient(circle, rgba(139,92,246,0.1), transparent); top: 50%; left: 50%; transform: translate(-50%,-50%); animation-delay: -2s; }
         @keyframes orbFloat {
-            0%, 100% { transform: translate(0, 0) scale(1); }
-            33% { transform: translate(20px, -20px) scale(1.05); }
-            66% { transform: translate(-15px, 15px) scale(0.95); }
+            0%,100% { transform: translate(0,0) scale(1); }
+            33% { transform: translate(20px,-20px) scale(1.05); }
+            66% { transform: translate(-15px,15px) scale(0.95); }
         }
 
         /* ── Container ── */
         .container {
-            position: relative;
-            z-index: 1;
+            position: relative; z-index: 1;
             background: rgba(255,255,255,0.03);
             backdrop-filter: blur(24px);
-            -webkit-backdrop-filter: blur(24px);
             border-radius: 28px;
             border: 1px solid var(--border);
             padding: 44px;
-            max-width: 620px;
-            width: 100%;
-            box-shadow:
-                0 0 0 1px rgba(255,255,255,0.03),
-                0 20px 60px rgba(0,0,0,0.5),
-                0 0 80px rgba(99,102,241,0.05);
-            animation: slideIn 0.7s cubic-bezier(0.16, 1, 0.3, 1);
+            max-width: 640px; width: 100%;
+            box-shadow: 0 0 0 1px rgba(255,255,255,0.03), 0 20px 60px rgba(0,0,0,0.5), 0 0 80px rgba(99,102,241,0.05);
+            animation: slideIn 0.7s cubic-bezier(0.16,1,0.3,1);
         }
-
         @keyframes slideIn {
             from { opacity: 0; transform: translateY(40px) scale(0.97); }
             to   { opacity: 1; transform: translateY(0) scale(1); }
         }
 
         /* ── Header ── */
-        .header {
-            display: flex;
-            align-items: center;
-            gap: 16px;
-            margin-bottom: 10px;
-        }
+        .header { display: flex; align-items: center; gap: 16px; margin-bottom: 10px; }
         .logo-icon {
             width: 52px; height: 52px;
             background: linear-gradient(135deg, var(--primary), var(--accent));
             border-radius: 16px;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            font-size: 24px;
-            flex-shrink: 0;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 24px; flex-shrink: 0;
             box-shadow: 0 8px 24px rgba(99,102,241,0.4);
         }
         h1 {
-            font-size: 28px;
-            font-weight: 800;
+            font-size: 28px; font-weight: 800;
             background: linear-gradient(135deg, #e0e7ff, #a5b4fc, #67e8f9);
-            -webkit-background-clip: text;
-            -webkit-text-fill-color: transparent;
-            background-clip: text;
+            -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text;
             letter-spacing: -0.5px;
-            line-height: 1.2;
         }
-        .subtitle {
-            color: var(--text-mid);
-            font-size: 14px;
-            margin-top: 2px;
-        }
+        .subtitle { color: var(--text-mid); font-size: 14px; margin-top: 2px; }
+        .divider { height: 1px; background: linear-gradient(90deg, transparent, var(--border), transparent); margin: 24px 0; }
 
-        /* ── Divider ── */
-        .divider {
-            height: 1px;
-            background: linear-gradient(90deg, transparent, var(--border), transparent);
-            margin: 28px 0;
-        }
-
-        /* ── Steps indicator ── */
-        .steps {
-            display: flex;
-            align-items: center;
-            gap: 8px;
-            margin-bottom: 28px;
-        }
-        .step {
-            display: flex;
-            align-items: center;
-            gap: 6px;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-dim);
-            transition: color 0.3s;
-        }
+        /* ── Steps ── */
+        .steps { display: flex; align-items: center; gap: 8px; margin-bottom: 24px; }
+        .step { display: flex; align-items: center; gap: 6px; font-size: 12px; font-weight: 500; color: var(--text-dim); transition: color 0.3s; }
         .step.active { color: var(--primary-light); }
         .step.done { color: var(--success); }
         .step-num {
-            width: 22px; height: 22px;
-            border-radius: 50%;
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
+            width: 22px; height: 22px; border-radius: 50%;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
             display: flex; align-items: center; justify-content: center;
-            font-size: 11px;
-            transition: all 0.3s;
+            font-size: 11px; transition: all 0.3s;
         }
-        .step.active .step-num {
-            background: var(--primary);
-            border-color: var(--primary);
-            color: white;
-            box-shadow: 0 0 12px rgba(99,102,241,0.5);
-        }
-        .step.done .step-num {
-            background: var(--success);
-            border-color: var(--success);
-            color: white;
-        }
-        .step-line {
-            flex: 1;
-            height: 1px;
-            background: rgba(255,255,255,0.06);
-            transition: background 0.3s;
-        }
+        .step.active .step-num { background: var(--primary); border-color: var(--primary); color: white; box-shadow: 0 0 12px rgba(99,102,241,0.5); }
+        .step.done .step-num { background: var(--success); border-color: var(--success); color: white; }
+        .step-line { flex: 1; height: 1px; background: rgba(255,255,255,0.06); transition: background 0.5s; }
         .step-line.done { background: var(--success); }
 
         /* ── Upload area ── */
         .upload-area {
             border: 2px dashed rgba(99,102,241,0.25);
-            border-radius: 20px;
-            padding: 44px 24px;
+            border-radius: 20px; padding: 40px 24px;
             text-align: center;
             background: rgba(99,102,241,0.04);
             cursor: pointer;
             transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-            margin-bottom: 20px;
-            position: relative;
-            overflow: hidden;
+            margin-bottom: 16px; position: relative; overflow: hidden;
         }
-        .upload-area::after {
-            content: '';
-            position: absolute;
-            inset: 0;
-            background: radial-gradient(circle at center, rgba(99,102,241,0.08), transparent 70%);
-            opacity: 0;
-            transition: opacity 0.3s;
-        }
-        .upload-area:hover {
-            border-color: rgba(99,102,241,0.6);
-            background: rgba(99,102,241,0.08);
-            transform: translateY(-3px);
-            box-shadow: 0 12px 40px rgba(99,102,241,0.15);
-        }
-        .upload-area:hover::after { opacity: 1; }
-        .upload-area.drag-over {
-            border-color: var(--primary);
-            background: rgba(99,102,241,0.12);
-            transform: scale(1.02);
-            box-shadow: 0 0 0 4px rgba(99,102,241,0.1), 0 12px 40px rgba(99,102,241,0.2);
-        }
-        .upload-area.has-file {
-            border-color: rgba(16,185,129,0.4);
-            background: rgba(16,185,129,0.05);
-            padding: 24px;
-        }
+        .upload-area:hover { border-color: rgba(99,102,241,0.6); background: rgba(99,102,241,0.08); transform: translateY(-3px); box-shadow: 0 12px 40px rgba(99,102,241,0.15); }
+        .upload-area.drag-over { border-color: var(--primary); background: rgba(99,102,241,0.12); transform: scale(1.02); box-shadow: 0 0 0 4px rgba(99,102,241,0.1); }
+        .upload-area.has-file { padding: 20px; border-color: rgba(16,185,129,0.3); background: rgba(16,185,129,0.04); transform: none; }
+        .upload-area.has-file:hover { transform: none; box-shadow: none; border-color: rgba(16,185,129,0.5); }
         #fileInput { display: none; }
 
         .upload-icon-wrap {
-            width: 72px; height: 72px;
-            background: rgba(99,102,241,0.1);
-            border-radius: 20px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 32px;
-            margin: 0 auto 16px;
-            transition: all 0.3s;
+            width: 72px; height: 72px; background: rgba(99,102,241,0.1);
+            border-radius: 20px; display: flex; align-items: center; justify-content: center;
+            font-size: 32px; margin: 0 auto 16px; transition: all 0.3s;
         }
-        .upload-area:hover .upload-icon-wrap {
-            background: rgba(99,102,241,0.2);
-            transform: scale(1.05);
-        }
-        .upload-area.has-file .upload-icon-wrap {
-            background: rgba(16,185,129,0.15);
-            font-size: 26px;
-        }
-        .upload-title {
-            font-size: 16px;
-            font-weight: 600;
-            color: var(--text);
-            margin-bottom: 6px;
-        }
-        .upload-sub {
-            font-size: 13px;
-            color: var(--text-dim);
-            margin-bottom: 16px;
-        }
-        .upload-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 6px;
-            background: rgba(99,102,241,0.1);
-            border: 1px solid rgba(99,102,241,0.2);
-            border-radius: 20px;
-            padding: 4px 12px;
-            font-size: 12px;
-            color: var(--primary-light);
-            font-weight: 500;
-        }
-        .file-details {
-            display: none;
-        }
-        .file-details.show {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-        }
+        .upload-area:hover .upload-icon-wrap { background: rgba(99,102,241,0.2); transform: scale(1.05); }
+        .upload-area.has-file .upload-icon-wrap { background: rgba(16,185,129,0.15); font-size: 26px; width: 52px; height: 52px; border-radius: 14px; margin: 0; flex-shrink: 0; }
+        .upload-title { font-size: 16px; font-weight: 600; color: var(--text); margin-bottom: 6px; }
+        .upload-sub { font-size: 13px; color: var(--text-dim); margin-bottom: 16px; }
+        .upload-badge { display: inline-flex; align-items: center; gap: 6px; background: rgba(99,102,241,0.1); border: 1px solid rgba(99,102,241,0.2); border-radius: 20px; padding: 4px 12px; font-size: 12px; color: var(--primary-light); font-weight: 500; }
+
+        .file-details { display: none; align-items: center; gap: 14px; }
+        .file-details.show { display: flex; animation: fadeUp 0.4s ease; }
         .file-info-text { flex: 1; text-align: left; }
-        .file-name-display {
-            font-weight: 600;
-            font-size: 14px;
-            color: var(--text);
-            white-space: nowrap;
-            overflow: hidden;
-            text-overflow: ellipsis;
-            max-width: 320px;
+        .file-name-display { font-weight: 600; font-size: 14px; color: var(--text); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; max-width: 280px; }
+        .file-meta { display: flex; gap: 10px; margin-top: 4px; }
+        .file-meta-badge {
+            display: inline-flex; align-items: center; gap: 4px;
+            font-size: 11px; color: var(--text-mid);
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 6px; padding: 2px 8px;
         }
-        .file-size-display {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-top: 2px;
-        }
-        .file-change-btn {
-            background: rgba(255,255,255,0.05);
-            border: 1px solid rgba(255,255,255,0.1);
-            border-radius: 8px;
-            color: var(--text-mid);
-            font-size: 12px;
-            padding: 6px 12px;
-            cursor: pointer;
-            transition: all 0.2s;
-            white-space: nowrap;
-        }
-        .file-change-btn:hover {
-            background: rgba(255,255,255,0.08);
-            color: var(--text);
-        }
+        .file-meta-badge.pages-badge { color: var(--primary-light); background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
 
-        /* ── Sezione form ── */
-        .form-section {
-            animation: fadeUp 0.4s ease both;
-        }
-        @keyframes fadeUp {
-            from { opacity: 0; transform: translateY(12px); }
-            to   { opacity: 1; transform: translateY(0); }
-        }
-
-        .section-label {
-            font-size: 11px;
-            font-weight: 700;
-            letter-spacing: 1px;
-            text-transform: uppercase;
-            color: var(--text-dim);
-            margin-bottom: 12px;
-        }
-
-        .input-row {
-            display: grid;
-            grid-template-columns: 1fr 1fr;
-            gap: 12px;
-            margin-bottom: 16px;
-        }
-
-        .input-group {
-            position: relative;
-        }
-        .input-group label {
-            display: block;
-            font-size: 12px;
-            font-weight: 500;
-            color: var(--text-mid);
-            margin-bottom: 6px;
-        }
-        .input-wrap {
-            position: relative;
-            display: flex;
-            align-items: center;
-        }
-        .input-prefix {
-            position: absolute;
-            left: 14px;
-            font-size: 13px;
-            color: var(--text-dim);
-            pointer-events: none;
-            z-index: 1;
-        }
-        input[type="number"],
-        input[type="text"] {
-            width: 100%;
-            padding: 12px 16px 12px 36px;
-            background: rgba(15,20,40,0.6);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 12px;
-            color: var(--text);
-            font-size: 15px;
+        .file-actions { display: flex; gap: 8px; flex-shrink: 0; }
+        .btn-sm {
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 8px; color: var(--text-mid); font-size: 12px; font-weight: 500;
+            padding: 6px 12px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 5px; white-space: nowrap;
             font-family: 'Inter', sans-serif;
-            font-weight: 500;
-            transition: all 0.25s;
-            outline: none;
+        }
+        .btn-sm:hover { background: rgba(255,255,255,0.08); color: var(--text); }
+        .btn-sm.preview-btn { color: var(--primary-light); background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.2); }
+        .btn-sm.preview-btn:hover { background: rgba(99,102,241,0.2); }
+
+        /* ── Loading PDF ── */
+        .pdf-loading {
+            display: none; align-items: center; gap: 10px;
+            padding: 12px 16px; background: rgba(99,102,241,0.06);
+            border: 1px solid rgba(99,102,241,0.15); border-radius: 12px;
+            font-size: 13px; color: var(--text-mid); margin-bottom: 16px;
+        }
+        .pdf-loading.show { display: flex; animation: fadeUp 0.3s ease; }
+        .mini-spinner { width: 16px; height: 16px; border: 2px solid rgba(99,102,241,0.3); border-top-color: var(--primary); border-radius: 50%; animation: spin 0.7s linear infinite; }
+
+        /* ── Form ── */
+        .form-section { animation: fadeUp 0.4s ease both; }
+        @keyframes fadeUp { from { opacity: 0; transform: translateY(12px); } to { opacity: 1; transform: translateY(0); } }
+
+        .section-label { font-size: 11px; font-weight: 700; letter-spacing: 1px; text-transform: uppercase; color: var(--text-dim); margin-bottom: 12px; }
+
+        .input-row { display: grid; grid-template-columns: 1fr 1fr; gap: 12px; margin-bottom: 10px; }
+        .input-group label { display: block; font-size: 12px; font-weight: 500; color: var(--text-mid); margin-bottom: 6px; }
+        .input-wrap { position: relative; display: flex; align-items: center; }
+        .input-prefix { position: absolute; left: 14px; font-size: 13px; color: var(--text-dim); pointer-events: none; z-index: 1; }
+
+        input[type="number"], input[type="text"] {
+            width: 100%; padding: 12px 16px 12px 32px;
+            background: rgba(15,20,40,0.6); border: 1px solid rgba(255,255,255,0.07);
+            border-radius: 12px; color: var(--text);
+            font-size: 15px; font-family: 'Inter', sans-serif; font-weight: 500;
+            transition: all 0.25s; outline: none;
         }
         input[type="text"] { padding-left: 16px; }
-        input[type="number"]:focus,
-        input[type="text"]:focus {
-            border-color: var(--primary);
-            background: rgba(15,20,40,0.9);
-            box-shadow: 0 0 0 3px rgba(99,102,241,0.12);
-        }
+        input:focus { border-color: var(--primary); background: rgba(15,20,40,0.9); box-shadow: 0 0 0 3px rgba(99,102,241,0.12); }
         input::placeholder { color: var(--text-dim); font-size: 13px; }
         input::-webkit-inner-spin-button { opacity: 0.3; }
 
-        /* Hint pagine */
-        .pages-hint {
-            font-size: 11px;
-            color: var(--text-dim);
-            margin-top: 6px;
-            display: flex;
-            align-items: center;
-            gap: 4px;
-        }
-        .pages-hint.valid { color: var(--success); }
-        .pages-hint.invalid { color: var(--error); }
+        /* Slider pagine */
+        .range-slider-wrap { margin-bottom: 12px; padding: 0 2px; }
+        .range-track { position: relative; height: 4px; background: rgba(255,255,255,0.08); border-radius: 4px; margin: 16px 0 8px; }
+        .range-fill { position: absolute; height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; transition: all 0.1s; }
+        .range-labels { display: flex; justify-content: space-between; font-size: 10px; color: var(--text-dim); }
 
-        /* ── Output name row ── */
-        .output-row {
-            margin-bottom: 0;
+        .pages-hint { font-size: 12px; margin-top: 8px; margin-bottom: 16px; display: flex; align-items: center; gap: 6px; padding: 8px 12px; border-radius: 8px; background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); transition: all 0.3s; }
+        .pages-hint.valid { color: var(--success); background: rgba(16,185,129,0.06); border-color: rgba(16,185,129,0.15); }
+        .pages-hint.invalid { color: var(--error); background: rgba(239,68,68,0.06); border-color: rgba(239,68,68,0.15); }
+        .pages-hint.neutral { color: var(--text-mid); }
+
+        /* Quick selectors */
+        .quick-select { display: flex; gap: 6px; margin-bottom: 16px; flex-wrap: wrap; }
+        .quick-btn {
+            font-size: 11px; font-weight: 500; font-family: 'Inter', sans-serif;
+            padding: 4px 10px; border-radius: 6px; border: 1px solid rgba(255,255,255,0.08);
+            background: rgba(255,255,255,0.04); color: var(--text-dim);
+            cursor: pointer; transition: all 0.2s;
         }
-        .output-input-wrap {
-            display: flex;
-            align-items: center;
-            gap: 0;
-        }
-        .output-input-wrap input {
-            border-radius: 12px 0 0 12px;
-            border-right: none;
-            flex: 1;
-            padding-left: 16px;
-        }
-        .output-suffix {
-            background: rgba(99,102,241,0.1);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-left: none;
-            border-radius: 0 12px 12px 0;
-            padding: 12px 14px;
-            font-size: 14px;
-            font-weight: 600;
-            color: var(--primary-light);
-            white-space: nowrap;
-        }
+        .quick-btn:hover { background: rgba(99,102,241,0.1); border-color: rgba(99,102,241,0.3); color: var(--primary-light); }
+
+        /* Output */
+        .output-input-wrap { display: flex; }
+        .output-input-wrap input { border-radius: 12px 0 0 12px; border-right: none; flex: 1; padding-left: 16px; }
+        .output-suffix { background: rgba(99,102,241,0.1); border: 1px solid rgba(255,255,255,0.07); border-left: none; border-radius: 0 12px 12px 0; padding: 12px 14px; font-size: 14px; font-weight: 600; color: var(--primary-light); white-space: nowrap; }
 
         /* ── Bottone ── */
-        .btn-wrap {
-            margin-top: 28px;
-            position: relative;
-        }
-        .btn-glow {
-            position: absolute;
-            inset: -2px;
-            background: linear-gradient(135deg, var(--primary), var(--accent));
-            border-radius: 14px;
-            filter: blur(12px);
-            opacity: 0;
-            transition: opacity 0.3s;
-            z-index: 0;
-        }
-        .btn {
-            position: relative;
-            z-index: 1;
-            width: 100%;
-            padding: 16px 24px;
-            border: none;
-            border-radius: 14px;
-            font-size: 16px;
-            font-weight: 700;
-            font-family: 'Inter', sans-serif;
-            cursor: pointer;
-            transition: all 0.3s cubic-bezier(0.16,1,0.3,1);
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            gap: 10px;
-            letter-spacing: 0.2px;
-        }
-        .btn-primary {
-            background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 50%, var(--accent) 100%);
-            background-size: 200% 200%;
-            color: white;
-            box-shadow: 0 4px 24px rgba(99,102,241,0.35);
-        }
-        .btn-primary:hover:not(:disabled) {
-            transform: translateY(-2px);
-            box-shadow: 0 8px 32px rgba(99,102,241,0.5);
-            background-position: right center;
-        }
-        .btn-wrap:hover .btn-glow { opacity: 0.6; }
-        .btn-primary:active:not(:disabled) { transform: translateY(0); }
-        .btn:disabled {
-            opacity: 0.4;
-            cursor: not-allowed;
-        }
-
-        /* Spinner */
-        .spinner {
-            width: 18px; height: 18px;
-            border: 2px solid rgba(255,255,255,0.3);
-            border-top-color: white;
-            border-radius: 50%;
-            animation: spin 0.7s linear infinite;
-            display: none;
-        }
+        .btn-wrap { margin-top: 28px; position: relative; }
+        .btn-glow { position: absolute; inset: -2px; background: linear-gradient(135deg, var(--primary), var(--accent)); border-radius: 14px; filter: blur(12px); opacity: 0; transition: opacity 0.3s; z-index: 0; }
+        .btn { position: relative; z-index: 1; width: 100%; padding: 16px 24px; border: none; border-radius: 14px; font-size: 16px; font-weight: 700; font-family: 'Inter', sans-serif; cursor: pointer; transition: all 0.3s cubic-bezier(0.16,1,0.3,1); display: flex; align-items: center; justify-content: center; gap: 10px; }
+        .btn-primary { background: linear-gradient(135deg, var(--primary) 0%, #7c3aed 50%, var(--accent) 100%); background-size: 200%; color: white; box-shadow: 0 4px 24px rgba(99,102,241,0.35); }
+        .btn-primary:hover:not(:disabled) { transform: translateY(-2px); box-shadow: 0 8px 32px rgba(99,102,241,0.5); }
+        .btn-wrap:hover .btn-glow { opacity: 0.5; }
+        .btn:disabled { opacity: 0.4; cursor: not-allowed; }
+        .spinner { width: 18px; height: 18px; border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; display: none; }
         @keyframes spin { to { transform: rotate(360deg); } }
         .btn.loading .spinner { display: block; }
         .btn.loading .btn-text { opacity: 0.7; }
 
-        /* Progress bar */
-        .progress-wrap {
-            margin-top: 16px;
-            display: none;
-        }
+        /* Progress */
+        .progress-wrap { margin-top: 16px; display: none; }
         .progress-wrap.show { display: block; }
-        .progress-bar-bg {
-            height: 4px;
-            background: rgba(255,255,255,0.06);
-            border-radius: 4px;
+        .progress-bar-bg { height: 4px; background: rgba(255,255,255,0.06); border-radius: 4px; overflow: hidden; }
+        .progress-bar-fill { height: 100%; background: linear-gradient(90deg, var(--primary), var(--accent)); border-radius: 4px; width: 0%; transition: width 0.3s ease; }
+        .progress-label { font-size: 12px; color: var(--text-dim); margin-top: 8px; text-align: center; }
+
+        /* ── Success card ── */
+        .success-card { display: none; margin-top: 20px; padding: 20px; background: rgba(16,185,129,0.06); border: 1px solid rgba(16,185,129,0.2); border-radius: 16px; animation: fadeUp 0.4s ease; }
+        .success-card.show { display: block; }
+        .success-header { display: flex; align-items: center; gap: 12px; margin-bottom: 16px; }
+        .success-icon { width: 42px; height: 42px; background: rgba(16,185,129,0.15); border-radius: 12px; display: flex; align-items: center; justify-content: center; font-size: 20px; }
+        .success-title { font-size: 15px; font-weight: 700; color: #6ee7b7; }
+        .success-sub { font-size: 12px; color: var(--text-dim); margin-top: 2px; }
+        .success-stats { display: grid; grid-template-columns: repeat(4,1fr); gap: 8px; }
+        .stat-item { background: rgba(255,255,255,0.03); border: 1px solid rgba(255,255,255,0.06); border-radius: 10px; padding: 10px; text-align: center; }
+        .stat-val { font-size: 18px; font-weight: 700; color: var(--text); }
+        .stat-lbl { font-size: 10px; color: var(--text-dim); text-transform: uppercase; letter-spacing: 0.5px; margin-top: 2px; }
+
+        /* ── Footer ── */
+        .footer { margin-top: 24px; padding-top: 18px; border-top: 1px solid var(--border); display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+        .footer-text { font-size: 12px; color: var(--text-dim); }
+        .footer-badges { display: flex; gap: 6px; }
+        .footer-badge { display: inline-flex; align-items: center; gap: 4px; font-size: 11px; color: var(--text-dim); background: rgba(255,255,255,0.04); border: 1px solid rgba(255,255,255,0.07); border-radius: 20px; padding: 3px 10px; }
+        .footer-badge span { color: var(--primary-light); }
+
+        /* ── MODAL PREVIEW ── */
+        .modal-overlay {
+            position: fixed; inset: 0; z-index: 1000;
+            background: rgba(0,0,0,0.85); backdrop-filter: blur(12px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; opacity: 0; pointer-events: none;
+            transition: opacity 0.3s;
+        }
+        .modal-overlay.open { opacity: 1; pointer-events: all; }
+        .modal {
+            background: #0d0d1f; border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 24px; width: 100%; max-width: 860px;
+            max-height: 90vh; display: flex; flex-direction: column;
+            box-shadow: 0 32px 80px rgba(0,0,0,0.7);
+            transform: scale(0.95); transition: transform 0.3s;
             overflow: hidden;
         }
-        .progress-bar-fill {
-            height: 100%;
-            background: linear-gradient(90deg, var(--primary), var(--accent));
-            border-radius: 4px;
-            width: 0%;
-            transition: width 0.3s ease;
-            animation: progressPulse 1.5s ease-in-out infinite;
+        .modal-overlay.open .modal { transform: scale(1); }
+        .modal-header {
+            padding: 20px 24px; border-bottom: 1px solid rgba(255,255,255,0.06);
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
         }
-        @keyframes progressPulse {
-            0%, 100% { opacity: 1; }
-            50% { opacity: 0.7; }
+        .modal-title { font-size: 16px; font-weight: 700; flex: 1; }
+        .modal-meta { font-size: 12px; color: var(--text-dim); }
+        .modal-close {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text-mid); font-size: 16px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
         }
-        .progress-label {
-            font-size: 12px;
-            color: var(--text-dim);
-            margin-top: 8px;
-            text-align: center;
+        .modal-close:hover { background: rgba(239,68,68,0.1); border-color: rgba(239,68,68,0.3); color: var(--error); }
+        .modal-toolbar {
+            padding: 12px 24px; border-bottom: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; gap: 12px; flex-shrink: 0;
+            background: rgba(255,255,255,0.02);
+        }
+        .nav-btn {
+            width: 32px; height: 32px; border-radius: 8px;
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            color: var(--text); font-size: 14px; cursor: pointer;
+            display: flex; align-items: center; justify-content: center;
+            transition: all 0.2s; flex-shrink: 0;
+        }
+        .nav-btn:hover:not(:disabled) { background: rgba(99,102,241,0.15); border-color: rgba(99,102,241,0.3); }
+        .nav-btn:disabled { opacity: 0.3; cursor: not-allowed; }
+        .page-indicator {
+            font-size: 13px; color: var(--text-mid);
+            background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.08);
+            border-radius: 8px; padding: 6px 14px; white-space: nowrap;
+        }
+        .page-indicator strong { color: var(--text); }
+        .zoom-controls { display: flex; gap: 6px; margin-left: auto; }
+        .modal-select-btn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none; border-radius: 8px; color: white;
+            font-size: 12px; font-weight: 600; font-family: 'Inter', sans-serif;
+            padding: 7px 14px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 6px; white-space: nowrap;
+        }
+        .modal-select-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+        .modal-body {
+            flex: 1; overflow: hidden; display: flex; gap: 0;
         }
 
-        /* ── Toast ── */
-        .toast-container {
-            position: fixed;
-            bottom: 24px;
-            right: 24px;
-            z-index: 1000;
-            display: flex;
-            flex-direction: column;
-            gap: 10px;
+        /* Thumbnails sidebar */
+        .thumb-sidebar {
+            width: 120px; flex-shrink: 0;
+            background: rgba(0,0,0,0.3);
+            border-right: 1px solid rgba(255,255,255,0.05);
+            overflow-y: auto; padding: 12px 8px;
+            display: flex; flex-direction: column; gap: 8px;
         }
+        .thumb-sidebar::-webkit-scrollbar { width: 4px; }
+        .thumb-sidebar::-webkit-scrollbar-track { background: transparent; }
+        .thumb-sidebar::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .thumb-item {
+            cursor: pointer; border-radius: 8px; overflow: hidden;
+            border: 2px solid transparent; transition: all 0.2s;
+            position: relative; background: rgba(255,255,255,0.04);
+        }
+        .thumb-item:hover { border-color: rgba(99,102,241,0.4); }
+        .thumb-item.active { border-color: var(--primary); box-shadow: 0 0 12px rgba(99,102,241,0.3); }
+        .thumb-item.in-range { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.05); }
+        .thumb-item.active.in-range { border-color: var(--primary); }
+        .thumb-canvas { width: 100%; display: block; }
+        .thumb-num {
+            position: absolute; bottom: 4px; left: 50%; transform: translateX(-50%);
+            font-size: 9px; font-weight: 700; color: white;
+            background: rgba(0,0,0,0.7); border-radius: 4px; padding: 1px 5px;
+        }
+        .thumb-loading { width: 100%; aspect-ratio: 0.77; background: rgba(255,255,255,0.04); display: flex; align-items: center; justify-content: center; font-size: 18px; color: var(--text-dim); border-radius: 6px; }
+
+        /* Main viewer */
+        .main-viewer {
+            flex: 1; overflow-y: auto; display: flex;
+            align-items: flex-start; justify-content: center;
+            padding: 24px; background: #111122;
+        }
+        .main-viewer::-webkit-scrollbar { width: 6px; }
+        .main-viewer::-webkit-scrollbar-track { background: transparent; }
+        .main-viewer::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 4px; }
+        .main-canvas-wrap {
+            position: relative; box-shadow: 0 8px 40px rgba(0,0,0,0.6);
+            border-radius: 4px; overflow: hidden;
+        }
+        #mainCanvas { display: block; max-width: 100%; }
+        .page-overlay {
+            position: absolute; inset: 0; pointer-events: none;
+            border: 3px solid transparent; border-radius: 4px; transition: all 0.3s;
+        }
+        .page-overlay.in-range { border-color: rgba(16,185,129,0.5); background: rgba(16,185,129,0.03); }
+
+        /* Range indicator nel viewer */
+        .range-chip {
+            position: absolute; top: 8px; right: 8px;
+            background: rgba(16,185,129,0.9); color: white;
+            font-size: 11px; font-weight: 700; border-radius: 6px; padding: 3px 8px;
+            opacity: 0; transition: opacity 0.3s;
+        }
+        .range-chip.show { opacity: 1; }
+
+        /* Modal footer */
+        .modal-footer {
+            padding: 14px 24px; border-top: 1px solid rgba(255,255,255,0.05);
+            display: flex; align-items: center; justify-content: space-between;
+            flex-shrink: 0; background: rgba(0,0,0,0.2);
+        }
+        .range-preview-info { font-size: 12px; color: var(--text-dim); }
+        .range-preview-info strong { color: var(--primary-light); }
+        .apply-range-btn {
+            background: linear-gradient(135deg, var(--primary), var(--accent));
+            border: none; border-radius: 10px; color: white;
+            font-size: 13px; font-weight: 700; font-family: 'Inter', sans-serif;
+            padding: 10px 20px; cursor: pointer; transition: all 0.2s;
+            display: flex; align-items: center; gap: 8px;
+        }
+        .apply-range-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+        /* ── Toast ── */
+        .toast-container { position: fixed; bottom: 24px; right: 24px; z-index: 2000; display: flex; flex-direction: column; gap: 10px; }
         .toast {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            padding: 14px 18px;
-            background: rgba(15,20,40,0.95);
-            backdrop-filter: blur(20px);
-            border-radius: 14px;
+            display: flex; align-items: center; gap: 12px;
+            padding: 14px 18px; background: rgba(10,10,30,0.97);
+            backdrop-filter: blur(20px); border-radius: 14px;
             border: 1px solid rgba(255,255,255,0.08);
             box-shadow: 0 8px 32px rgba(0,0,0,0.4);
             animation: toastIn 0.4s cubic-bezier(0.16,1,0.3,1);
-            max-width: 340px;
-            font-size: 14px;
-            font-weight: 500;
+            max-width: 320px; font-size: 13px; font-weight: 500;
         }
-        @keyframes toastIn {
-            from { opacity: 0; transform: translateX(20px) scale(0.95); }
-            to   { opacity: 1; transform: translateX(0) scale(1); }
-        }
-        @keyframes toastOut {
-            to { opacity: 0; transform: translateX(20px) scale(0.95); }
-        }
-        .toast-icon { font-size: 18px; flex-shrink: 0; }
+        @keyframes toastIn { from { opacity: 0; transform: translateX(20px) scale(0.95); } to { opacity: 1; transform: translateX(0) scale(1); } }
         .toast.success { border-color: rgba(16,185,129,0.3); }
         .toast.error   { border-color: rgba(239,68,68,0.3); }
         .toast.info    { border-color: rgba(99,102,241,0.3); }
+        .toast-icon { font-size: 18px; }
+        .toast-close { margin-left: auto; background: none; border: none; color: var(--text-dim); cursor: pointer; font-size: 14px; padding: 0 0 0 8px; }
 
-        /* ── Success card ── */
-        .success-card {
-            display: none;
-            margin-top: 20px;
-            padding: 20px;
-            background: rgba(16,185,129,0.06);
-            border: 1px solid rgba(16,185,129,0.2);
-            border-radius: 16px;
-            animation: fadeUp 0.4s ease;
-        }
-        .success-card.show { display: block; }
-        .success-header {
-            display: flex;
-            align-items: center;
-            gap: 12px;
-            margin-bottom: 14px;
-        }
-        .success-icon {
-            width: 40px; height: 40px;
-            background: rgba(16,185,129,0.15);
-            border-radius: 10px;
-            display: flex; align-items: center; justify-content: center;
-            font-size: 20px;
-        }
-        .success-title {
-            font-size: 15px;
-            font-weight: 700;
-            color: #6ee7b7;
-        }
-        .success-sub {
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .success-stats {
-            display: grid;
-            grid-template-columns: 1fr 1fr 1fr;
-            gap: 10px;
-        }
-        .stat-item {
-            background: rgba(255,255,255,0.03);
-            border: 1px solid rgba(255,255,255,0.06);
-            border-radius: 10px;
-            padding: 10px 12px;
-            text-align: center;
-        }
-        .stat-val {
-            font-size: 18px;
-            font-weight: 700;
-            color: var(--text);
-        }
-        .stat-lbl {
-            font-size: 10px;
-            color: var(--text-dim);
-            text-transform: uppercase;
-            letter-spacing: 0.5px;
-            margin-top: 2px;
-        }
-
-        /* ── Footer ── */
-        .footer {
-            margin-top: 28px;
-            padding-top: 20px;
-            border-top: 1px solid var(--border);
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            gap: 12px;
-        }
-        .footer-text {
-            font-size: 12px;
-            color: var(--text-dim);
-        }
-        .footer-badge {
-            display: inline-flex;
-            align-items: center;
-            gap: 5px;
-            font-size: 11px;
-            color: var(--text-dim);
-            background: rgba(255,255,255,0.04);
-            border: 1px solid rgba(255,255,255,0.07);
-            border-radius: 20px;
-            padding: 4px 10px;
-        }
-        .footer-badge span { color: var(--primary-light); }
-
-        /* ── Responsive ── */
         @media (max-width: 640px) {
             .container { padding: 24px; border-radius: 20px; }
             h1 { font-size: 22px; }
             .input-row { grid-template-columns: 1fr; }
             .success-stats { grid-template-columns: 1fr 1fr; }
             .steps { display: none; }
+            .thumb-sidebar { display: none; }
+            .modal { border-radius: 16px; max-height: 95vh; }
         }
     </style>
 </head>
 <body>
 
-<!-- Orbs di sfondo -->
 <div class="bg-orbs">
     <div class="orb orb-1"></div>
     <div class="orb orb-2"></div>
     <div class="orb orb-3"></div>
 </div>
 
-<!-- Toast container -->
 <div class="toast-container" id="toastContainer"></div>
 
-<div class="container">
+<!-- ── MODAL PREVIEW ── -->
+<div class="modal-overlay" id="modalOverlay">
+    <div class="modal">
+        <div class="modal-header">
+            <div>
+                <div class="modal-title" id="modalTitle">Anteprima PDF</div>
+                <div class="modal-meta" id="modalMeta"></div>
+            </div>
+            <button class="modal-close" onclick="closeModal()">✕</button>
+        </div>
+        <div class="modal-toolbar">
+            <button class="nav-btn" id="prevBtn" onclick="changePage(-1)" title="Pagina precedente">‹</button>
+            <div class="page-indicator" id="pageIndicator"><strong>1</strong> / 1</div>
+            <button class="nav-btn" id="nextBtn" onclick="changePage(1)" title="Pagina successiva">›</button>
+            <div class="zoom-controls">
+                <button class="nav-btn" onclick="changeZoom(-0.2)" title="Riduci">−</button>
+                <div class="page-indicator" id="zoomIndicator">100%</div>
+                <button class="nav-btn" onclick="changeZoom(0.2)" title="Ingrandisci">+</button>
+            </div>
+            <button class="modal-select-btn" onclick="setRangeFromModal()" id="selectRangeBtn">
+                ✂️ Usa questa pagina
+            </button>
+        </div>
+        <div class="modal-body">
+            <div class="thumb-sidebar" id="thumbSidebar"></div>
+            <div class="main-viewer">
+                <div class="main-canvas-wrap">
+                    <canvas id="mainCanvas"></canvas>
+                    <div class="page-overlay" id="pageOverlay"></div>
+                    <div class="range-chip" id="rangeChip">Nel range</div>
+                </div>
+            </div>
+        </div>
+        <div class="modal-footer">
+            <div class="range-preview-info" id="rangePreviewInfo">Nessun range selezionato</div>
+            <button class="apply-range-btn" onclick="applyRangeAndClose()">
+                ✅ Applica range e chiudi
+            </button>
+        </div>
+    </div>
+</div>
 
-    <!-- Header -->
+<!-- ── MAIN APP ── -->
+<div class="container">
     <div class="header">
         <div class="logo-icon">📄</div>
         <div>
@@ -667,53 +482,55 @@
 
     <div class="divider"></div>
 
-    <!-- Steps -->
     <div class="steps" id="stepsBar">
-        <div class="step active" id="step1">
-            <div class="step-num">1</div>
-            <span>Carica</span>
-        </div>
+        <div class="step active" id="step1"><div class="step-num">1</div><span>Carica</span></div>
         <div class="step-line" id="line1"></div>
-        <div class="step" id="step2">
-            <div class="step-num">2</div>
-            <span>Configura</span>
-        </div>
+        <div class="step" id="step2"><div class="step-num">2</div><span>Configura</span></div>
         <div class="step-line" id="line2"></div>
-        <div class="step" id="step3">
-            <div class="step-num">3</div>
-            <span>Scarica</span>
-        </div>
+        <div class="step" id="step3"><div class="step-num">3</div><span>Scarica</span></div>
     </div>
 
-    <!-- Upload area -->
+    <!-- Upload -->
     <div class="upload-area" id="uploadArea">
         <input type="file" id="fileInput" accept=".pdf">
-
-        <!-- Stato default -->
         <div id="uploadDefault">
             <div class="upload-icon-wrap">📁</div>
             <div class="upload-title">Trascina qui il tuo PDF</div>
             <div class="upload-sub">oppure clicca per sfogliare</div>
-            <div class="upload-badge">
-                <span>📎</span> PDF · Max 50MB
-            </div>
+            <div class="upload-badge">📎 PDF · Max 50MB</div>
         </div>
-
-        <!-- Stato file selezionato -->
         <div class="file-details" id="fileDetails">
-            <div class="upload-icon-wrap">✅</div>
+            <div class="upload-icon-wrap">📄</div>
             <div class="file-info-text">
                 <div class="file-name-display" id="fileNameDisplay"></div>
-                <div class="file-size-display" id="fileSizeDisplay"></div>
+                <div class="file-meta">
+                    <span class="file-meta-badge" id="fileSizeBadge">—</span>
+                    <span class="file-meta-badge pages-badge" id="filePagesBadge">⏳ Conteggio...</span>
+                </div>
             </div>
-            <button class="file-change-btn" onclick="changeFile(event)">Cambia</button>
+            <div class="file-actions">
+                <button class="btn-sm preview-btn" onclick="openModal(event)" id="previewBtn">👁 Anteprima</button>
+                <button class="btn-sm" onclick="changeFile(event)">↺ Cambia</button>
+            </div>
         </div>
     </div>
 
-    <!-- Form sezione (visibile dopo file selezionato) -->
+    <!-- PDF loading indicator -->
+    <div class="pdf-loading" id="pdfLoading">
+        <div class="mini-spinner"></div>
+        <span>Analisi PDF in corso...</span>
+    </div>
+
+    <!-- Form -->
     <div class="form-section" id="formSection" style="display:none;">
 
         <div class="section-label">Intervallo pagine</div>
+
+        <!-- Quick selectors -->
+        <div class="quick-select" id="quickSelect">
+            <span style="font-size:11px; color:var(--text-dim); align-self:center; margin-right:4px;">Seleziona:</span>
+        </div>
+
         <div class="input-row">
             <div class="input-group">
                 <label for="fromPage">Pagina iniziale</label>
@@ -726,25 +543,36 @@
                 <label for="toPage">Pagina finale</label>
                 <div class="input-wrap">
                     <span class="input-prefix">#</span>
-                    <input type="number" id="toPage" min="1" placeholder="10" value="10">
+                    <input type="number" id="toPage" min="1" placeholder="10">
                 </div>
             </div>
         </div>
-        <div class="pages-hint" id="pagesHint">
-            <span>ℹ️</span> <span id="pagesHintText">Inserisci l'intervallo di pagine da estrarre</span>
-        </div>
 
-        <div class="divider" style="margin: 20px 0;"></div>
-
-        <div class="section-label" style="margin-top:0;">Nome file output</div>
-        <div class="output-row">
-            <div class="output-input-wrap">
-                <input type="text" id="outputName" placeholder="es. capitolo_1" value="estratto">
-                <div class="output-suffix">.pdf</div>
+        <!-- Range visual track -->
+        <div class="range-slider-wrap">
+            <div class="range-track">
+                <div class="range-fill" id="rangeFill"></div>
+            </div>
+            <div class="range-labels">
+                <span>1</span>
+                <span id="rangeLabelMid"></span>
+                <span id="rangeLabelEnd"></span>
             </div>
         </div>
 
-        <!-- Bottone -->
+        <div class="pages-hint neutral" id="pagesHint">
+            <span>ℹ️</span>
+            <span id="pagesHintText">Inserisci l'intervallo di pagine da estrarre</span>
+        </div>
+
+        <div class="divider" style="margin: 18px 0;"></div>
+
+        <div class="section-label" style="margin-top:0;">Nome file output</div>
+        <div class="output-input-wrap">
+            <input type="text" id="outputName" placeholder="es. capitolo_1" value="estratto">
+            <div class="output-suffix">.pdf</div>
+        </div>
+
         <div class="btn-wrap">
             <div class="btn-glow"></div>
             <button class="btn btn-primary" id="extractBtn">
@@ -753,7 +581,6 @@
             </button>
         </div>
 
-        <!-- Progress -->
         <div class="progress-wrap" id="progressWrap">
             <div class="progress-bar-bg">
                 <div class="progress-bar-fill" id="progressFill"></div>
@@ -761,107 +588,185 @@
             <div class="progress-label" id="progressLabel">Connessione al server...</div>
         </div>
 
-        <!-- Success card -->
         <div class="success-card" id="successCard">
             <div class="success-header">
                 <div class="success-icon">🎉</div>
                 <div>
                     <div class="success-title">Estrazione completata!</div>
-                    <div class="success-sub" id="successSub">Il download è iniziato automaticamente</div>
+                    <div class="success-sub" id="successSub">Il download è iniziato</div>
                 </div>
             </div>
             <div class="success-stats" id="successStats"></div>
         </div>
     </div>
 
-    <!-- Footer -->
     <div class="footer">
-        <div class="footer-text">Nessun file viene salvato sui server</div>
-        <div class="footer-badge">⚡ <span>PyMuPDF</span> + Flask</div>
+        <div class="footer-text">🔒 Nessun file salvato sui server</div>
+        <div class="footer-badges">
+            <div class="footer-badge">⚡ <span>PyMuPDF</span></div>
+            <div class="footer-badge">🐍 <span>Flask</span></div>
+        </div>
     </div>
-
 </div>
 
 <script>
+    // ── Config ──
     const API_URL = "https://pdf-extractor-api-duyo.onrender.com";
+    pdfjsLib.GlobalWorkerOptions.workerSrc = 'https://cdnjs.cloudflare.com/ajax/libs/pdf.js/3.11.174/pdf.worker.min.js';
 
-    const uploadArea   = document.getElementById('uploadArea');
-    const fileInput    = document.getElementById('fileInput');
-    const uploadDefault = document.getElementById('uploadDefault');
-    const fileDetails  = document.getElementById('fileDetails');
-    const fileNameDisp = document.getElementById('fileNameDisplay');
-    const fileSizeDisp = document.getElementById('fileSizeDisplay');
-    const formSection  = document.getElementById('formSection');
-    const extractBtn   = document.getElementById('extractBtn');
-    const fromPage     = document.getElementById('fromPage');
-    const toPage       = document.getElementById('toPage');
-    const outputName   = document.getElementById('outputName');
-    const progressWrap = document.getElementById('progressWrap');
-    const progressFill = document.getElementById('progressFill');
-    const progressLabel= document.getElementById('progressLabel');
-    const successCard  = document.getElementById('successCard');
-    const pagesHint    = document.getElementById('pagesHint');
-    const pagesHintTxt = document.getElementById('pagesHintText');
-
-    let selectedFile = null;
+    // ── Stato ──
+    let selectedFile    = null;
+    let pdfDoc          = null;
+    let totalPages      = 0;
+    let currentPage     = 1;
+    let zoomLevel       = 1.0;
     let extractionCount = 0;
+    let thumbsRendered  = new Set();
+    let modalFromPage   = null;
+    let modalToPage     = null;
 
-    // ── Upload area ──
-    uploadArea.addEventListener('click', () => fileInput.click());
+    // ── Refs ──
+    const uploadArea    = document.getElementById('uploadArea');
+    const fileInput     = document.getElementById('fileInput');
+    const uploadDefault = document.getElementById('uploadDefault');
+    const fileDetails   = document.getElementById('fileDetails');
+    const formSection   = document.getElementById('formSection');
+    const extractBtn    = document.getElementById('extractBtn');
+    const fromPageInp   = document.getElementById('fromPage');
+    const toPageInp     = document.getElementById('toPage');
+    const outputName    = document.getElementById('outputName');
+    const progressWrap  = document.getElementById('progressWrap');
+    const progressFill  = document.getElementById('progressFill');
+    const progressLabel = document.getElementById('progressLabel');
+    const successCard   = document.getElementById('successCard');
+    const pagesHint     = document.getElementById('pagesHint');
+    const pagesHintTxt  = document.getElementById('pagesHintText');
+    const rangeFill     = document.getElementById('rangeFill');
 
-    uploadArea.addEventListener('dragover', (e) => {
-        e.preventDefault();
-        uploadArea.classList.add('drag-over');
-    });
-    uploadArea.addEventListener('dragleave', () => {
-        uploadArea.classList.remove('drag-over');
-    });
-    uploadArea.addEventListener('drop', (e) => {
-        e.preventDefault();
-        uploadArea.classList.remove('drag-over');
+    // ── Upload ──
+    uploadArea.addEventListener('click', () => { if (!selectedFile) fileInput.click(); });
+    uploadArea.addEventListener('dragover',  e => { e.preventDefault(); uploadArea.classList.add('drag-over'); });
+    uploadArea.addEventListener('dragleave', () => uploadArea.classList.remove('drag-over'));
+    uploadArea.addEventListener('drop', e => {
+        e.preventDefault(); uploadArea.classList.remove('drag-over');
         const f = e.dataTransfer.files[0];
         if (f && f.type === 'application/pdf') handleFile(f);
         else showToast('Seleziona un file PDF valido', 'error');
     });
-    fileInput.addEventListener('change', (e) => {
-        if (e.target.files[0]) handleFile(e.target.files[0]);
-    });
+    fileInput.addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
 
-    function changeFile(e) {
-        e.stopPropagation();
-        fileInput.click();
+    function changeFile(e) { e.stopPropagation(); fileInput.click(); }
+    function openModal(e)  { e.stopPropagation(); if (pdfDoc) showModal(); }
+
+    function formatSize(b) {
+        return b < 1048576 ? (b/1024).toFixed(1)+' KB' : (b/1048576).toFixed(1)+' MB';
     }
 
-    function formatSize(bytes) {
-        if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB';
-        return (bytes / 1024 / 1024).toFixed(1) + ' MB';
-    }
+    async function handleFile(file) {
+        if (file.size > 50 * 1024 * 1024) { showToast('File troppo grande (max 50MB)', 'error'); return; }
 
-    function handleFile(file) {
-        if (file.size > 50 * 1024 * 1024) {
-            showToast('File troppo grande (max 50MB)', 'error');
-            return;
-        }
         selectedFile = file;
+        pdfDoc = null; totalPages = 0; thumbsRendered.clear();
 
         // Aggiorna UI upload
         uploadDefault.style.display = 'none';
         fileDetails.classList.add('show');
         uploadArea.classList.add('has-file');
-        fileNameDisp.textContent = file.name;
-        fileSizeDisp.textContent = formatSize(file.size);
+        document.getElementById('fileNameDisplay').textContent = file.name;
+        document.getElementById('fileSizeBadge').textContent   = formatSize(file.size);
+        document.getElementById('filePagesBadge').textContent  = '⏳ Analisi...';
+        document.getElementById('previewBtn').disabled = true;
 
-        // Mostra form
-        formSection.style.display = 'block';
+        // Mostra loading
+        document.getElementById('pdfLoading').classList.add('show');
 
-        // Aggiorna steps
-        setStep(2);
+        // Analizza PDF con PDF.js
+        try {
+            const arrayBuffer = await file.arrayBuffer();
+            pdfDoc = await pdfjsLib.getDocument({ data: arrayBuffer }).promise;
+            totalPages = pdfDoc.numPages;
 
-        // Reset stato
-        successCard.classList.remove('show');
-        progressWrap.classList.remove('show');
+            document.getElementById('filePagesBadge').textContent = `📄 ${totalPages} pagine`;
+            document.getElementById('previewBtn').disabled = false;
+            document.getElementById('pdfLoading').classList.remove('show');
 
-        showToast('PDF caricato con successo', 'success');
+            // Auto-set range 1 → totalPages
+            fromPageInp.value = 1;
+            toPageInp.value   = totalPages;
+
+            // Quick selectors dinamici
+            buildQuickSelectors(totalPages);
+
+            // Mostra form
+            formSection.style.display = 'block';
+            setStep(2);
+            validatePages();
+            updateRangeTrack();
+
+            document.getElementById('rangeLabelEnd').textContent  = totalPages;
+            document.getElementById('rangeLabelMid').textContent  = Math.round(totalPages / 2);
+
+            // Metadati modal
+            document.getElementById('modalTitle').textContent = file.name;
+            document.getElementById('modalMeta').textContent  = `${totalPages} pagine · ${formatSize(file.size)}`;
+
+            successCard.classList.remove('show');
+            showToast(`PDF caricato — ${totalPages} pagine rilevate`, 'success');
+
+        } catch(err) {
+            document.getElementById('pdfLoading').classList.remove('show');
+            document.getElementById('filePagesBadge').textContent = '⚠️ Errore lettura';
+            showToast('Errore lettura PDF: ' + err.message, 'error');
+        }
+    }
+
+    // ── Quick selectors ──
+    function buildQuickSelectors(n) {
+        const qs = document.getElementById('quickSelect');
+        qs.innerHTML = '<span style="font-size:11px;color:var(--text-dim);align-self:center;margin-right:4px;">Rapido:</span>';
+        const presets = [
+            { label: 'Tutte', from: 1, to: n },
+            { label: 'Prima metà', from: 1, to: Math.floor(n/2) },
+            { label: 'Seconda metà', from: Math.floor(n/2)+1, to: n },
+        ];
+        if (n >= 10) presets.push({ label: 'Prime 10', from: 1, to: 10 });
+        presets.forEach(p => {
+            const b = document.createElement('button');
+            b.className = 'quick-btn';
+            b.textContent = p.label;
+            b.onclick = () => {
+                fromPageInp.value = p.from;
+                toPageInp.value   = p.to;
+                validatePages(); updateRangeTrack();
+            };
+            qs.appendChild(b);
+        });
+    }
+
+    // ── Validazione live ──
+    [fromPageInp, toPageInp].forEach(i => i.addEventListener('input', () => { validatePages(); updateRangeTrack(); }));
+
+    function validatePages() {
+        const f = parseInt(fromPageInp.value);
+        const t = parseInt(toPageInp.value);
+        if (!f || !t) { pagesHint.className = 'pages-hint neutral'; pagesHintTxt.textContent = 'Inserisci l\'intervallo'; return; }
+        if (f < 1) { pagesHint.className = 'pages-hint invalid'; pagesHintTxt.textContent = '⚠️ Pagina iniziale deve essere ≥ 1'; return; }
+        if (totalPages && t > totalPages) { pagesHint.className = 'pages-hint invalid'; pagesHintTxt.textContent = `⚠️ Il PDF ha solo ${totalPages} pagine`; return; }
+        if (t < f) { pagesHint.className = 'pages-hint invalid'; pagesHintTxt.textContent = '⚠️ Pagina finale deve essere ≥ pagina iniziale'; return; }
+        const n = t - f + 1;
+        const pct = totalPages ? Math.round((n / totalPages) * 100) : 0;
+        pagesHint.className = 'pages-hint valid';
+        pagesHintTxt.textContent = `✅ ${n} pagine selezionate (${f}→${t}) · ${pct}% del documento`;
+    }
+
+    function updateRangeTrack() {
+        if (!totalPages) return;
+        const f = parseInt(fromPageInp.value) || 1;
+        const t = parseInt(toPageInp.value)   || totalPages;
+        const left  = ((f - 1) / totalPages) * 100;
+        const width = ((t - f + 1) / totalPages) * 100;
+        rangeFill.style.left  = left + '%';
+        rangeFill.style.width = Math.min(width, 100 - left) + '%';
     }
 
     // ── Steps ──
@@ -869,93 +774,57 @@
         for (let i = 1; i <= 3; i++) {
             const s = document.getElementById(`step${i}`);
             s.className = 'step';
-            if (i < n) s.classList.add('done'), s.querySelector('.step-num').textContent = '✓';
-            else if (i === n) s.classList.add('active'), s.querySelector('.step-num').textContent = i;
-            else s.querySelector('.step-num').textContent = i;
+            if (i < n) { s.classList.add('done'); s.querySelector('.step-num').textContent = '✓'; }
+            else if (i === n) { s.classList.add('active'); s.querySelector('.step-num').textContent = i; }
+            else { s.querySelector('.step-num').textContent = i; }
+            if (i <= 2) {
+                const l = document.getElementById(`line${i}`);
+                l.className = 'step-line' + (i < n ? ' done' : '');
+            }
         }
-        for (let i = 1; i <= 2; i++) {
-            const l = document.getElementById(`line${i}`);
-            l.className = 'step-line' + (i < n ? ' done' : '');
-        }
-    }
-
-    // ── Validazione live ──
-    [fromPage, toPage].forEach(inp => inp.addEventListener('input', validatePages));
-
-    function validatePages() {
-        const f = parseInt(fromPage.value);
-        const t = parseInt(toPage.value);
-        if (!f || !t) {
-            pagesHint.className = 'pages-hint';
-            pagesHintTxt.textContent = 'Inserisci l\'intervallo di pagine da estrarre';
-            return;
-        }
-        if (f < 1) {
-            pagesHint.className = 'pages-hint invalid';
-            pagesHintTxt.textContent = '⚠️ La pagina iniziale deve essere ≥ 1';
-            return;
-        }
-        if (t < f) {
-            pagesHint.className = 'pages-hint invalid';
-            pagesHintTxt.textContent = '⚠️ La pagina finale deve essere ≥ pagina iniziale';
-            return;
-        }
-        const n = t - f + 1;
-        pagesHint.className = 'pages-hint valid';
-        pagesHintTxt.textContent = `✅ Verranno estratte ${n} pagine (${f}→${t})`;
     }
 
     // ── Estrazione ──
     extractBtn.addEventListener('click', async () => {
         if (!selectedFile) return;
-
-        const from = parseInt(fromPage.value);
-        const to   = parseInt(toPage.value);
+        const from = parseInt(fromPageInp.value);
+        const to   = parseInt(toPageInp.value);
         const name = outputName.value.trim() || 'estratto';
+        if (isNaN(from) || isNaN(to) || from < 1 || to < from) { showToast('Intervallo pagine non valido', 'error'); return; }
+        if (totalPages && to > totalPages) { showToast(`Il PDF ha solo ${totalPages} pagine`, 'error'); return; }
 
-        if (isNaN(from) || isNaN(to) || from < 1 || to < from) {
-            showToast('Intervallo pagine non valido', 'error');
-            return;
-        }
-
-        // UI loading
         extractBtn.classList.add('loading');
         extractBtn.disabled = true;
         extractBtn.querySelector('.btn-text').textContent = 'Elaborazione...';
         progressWrap.classList.add('show');
+        progressFill.style.width = '0%';
         successCard.classList.remove('show');
         setStep(3);
 
-        // Progress simulato
         let prog = 0;
-        const progInterval = setInterval(() => {
-            prog = Math.min(prog + Math.random() * 8, 85);
+        const pi = setInterval(() => {
+            prog = Math.min(prog + Math.random() * 8, 88);
             progressFill.style.width = prog + '%';
-            if (prog < 30) progressLabel.textContent = 'Connessione al server...';
-            else if (prog < 60) progressLabel.textContent = 'Elaborazione PDF...';
-            else progressLabel.textContent = 'Quasi pronto...';
+            progressLabel.textContent = prog < 30 ? 'Connessione...' : prog < 60 ? 'Elaborazione PDF...' : 'Quasi pronto...';
         }, 300);
 
         try {
+            const t0 = Date.now();
             await extractPDF(from, to, name);
-
-            clearInterval(progInterval);
+            const elapsed = ((Date.now() - t0) / 1000).toFixed(1);
+            clearInterval(pi);
             progressFill.style.width = '100%';
             progressLabel.textContent = 'Completato!';
-
             setTimeout(() => progressWrap.classList.remove('show'), 800);
-
             extractionCount++;
-            showSuccessCard(from, to, name);
-            showToast(`✅ ${to - from + 1} pagine estratte!`, 'success');
-            setStep(3);
+            showSuccessCard(from, to, name, elapsed);
+            showToast(`✅ ${to - from + 1} pagine estratte in ${elapsed}s`, 'success');
             document.getElementById('step3').classList.add('done');
             document.getElementById('step3').querySelector('.step-num').textContent = '✓';
-
-        } catch (err) {
-            clearInterval(progInterval);
+        } catch(err) {
+            clearInterval(pi);
             progressWrap.classList.remove('show');
-            showToast(`Errore: ${err.message}`, 'error');
+            showToast('Errore: ' + err.message, 'error');
             setStep(2);
         } finally {
             extractBtn.classList.remove('loading');
@@ -965,67 +834,197 @@
     });
 
     async function extractPDF(from, to, name) {
-        const formData = new FormData();
-        formData.append('file', selectedFile);
-        formData.append('from_page', from);
-        formData.append('to_page', to);
-        formData.append('output_name', name);
-
-        const response = await fetch(`${API_URL}/extract`, {
-            method: 'POST',
-            body: formData
-        });
-
-        if (!response.ok) {
-            let errText = 'Errore sconosciuto';
-            try { const e = await response.json(); errText = e.error || errText; } catch(_) {}
-            throw new Error(errText);
+        const fd = new FormData();
+        fd.append('file', selectedFile);
+        fd.append('from_page', from);
+        fd.append('to_page', to);
+        fd.append('output_name', name);
+        const res = await fetch(`${API_URL}/extract`, { method: 'POST', body: fd });
+        if (!res.ok) {
+            let msg = 'Errore sconosciuto';
+            try { const e = await res.json(); msg = e.error || msg; } catch(_) {}
+            throw new Error(msg);
         }
-
-        const blob = await response.blob();
+        const blob = await res.blob();
         const url  = URL.createObjectURL(blob);
         const a    = document.createElement('a');
-        a.href     = url;
-        a.download = `${name}.pdf`;
-        document.body.appendChild(a);
-        a.click();
-        a.remove();
+        a.href = url; a.download = `${name}.pdf`;
+        document.body.appendChild(a); a.click(); a.remove();
         URL.revokeObjectURL(url);
     }
 
-    function showSuccessCard(from, to, name) {
+    function showSuccessCard(from, to, name, elapsed) {
         const n = to - from + 1;
-        document.getElementById('successSub').textContent =
-            `"${name}.pdf" scaricato automaticamente`;
+        document.getElementById('successSub').textContent = `"${name}.pdf" scaricato`;
         document.getElementById('successStats').innerHTML = `
-            <div class="stat-item">
-                <div class="stat-val">${n}</div>
-                <div class="stat-lbl">Pagine</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-val">${from}–${to}</div>
-                <div class="stat-lbl">Intervallo</div>
-            </div>
-            <div class="stat-item">
-                <div class="stat-val">${extractionCount}</div>
-                <div class="stat-lbl">Estrazioni</div>
-            </div>
+            <div class="stat-item"><div class="stat-val">${n}</div><div class="stat-lbl">Pagine</div></div>
+            <div class="stat-item"><div class="stat-val">${from}–${to}</div><div class="stat-lbl">Range</div></div>
+            <div class="stat-item"><div class="stat-val">${elapsed}s</div><div class="stat-lbl">Tempo</div></div>
+            <div class="stat-item"><div class="stat-val">${extractionCount}</div><div class="stat-lbl">Totale</div></div>
         `;
         successCard.classList.add('show');
     }
 
-    // ── Toast system ──
+    // ────────────────────────────────────────────
+    // ── MODAL PREVIEW ──
+    // ────────────────────────────────────────────
+    function showModal() {
+        if (!pdfDoc) return;
+        document.getElementById('modalOverlay').classList.add('open');
+        document.body.style.overflow = 'hidden';
+        buildThumbs();
+        renderMainPage(currentPage);
+        updateModalRangeInfo();
+    }
+
+    function closeModal() {
+        document.getElementById('modalOverlay').classList.remove('open');
+        document.body.style.overflow = '';
+    }
+
+    document.getElementById('modalOverlay').addEventListener('click', e => {
+        if (e.target === document.getElementById('modalOverlay')) closeModal();
+    });
+
+    document.addEventListener('keydown', e => {
+        if (!document.getElementById('modalOverlay').classList.contains('open')) return;
+        if (e.key === 'Escape') closeModal();
+        if (e.key === 'ArrowRight' || e.key === 'ArrowDown') changePage(1);
+        if (e.key === 'ArrowLeft'  || e.key === 'ArrowUp')   changePage(-1);
+    });
+
+    async function renderMainPage(num) {
+        if (!pdfDoc) return;
+        currentPage = num;
+        const page    = await pdfDoc.getPage(num);
+        const vp      = page.getViewport({ scale: zoomLevel * 1.5 });
+        const canvas  = document.getElementById('mainCanvas');
+        const ctx     = canvas.getContext('2d');
+        canvas.width  = vp.width;
+        canvas.height = vp.height;
+        await page.render({ canvasContext: ctx, viewport: vp }).promise;
+
+        // Indicatore pagina
+        document.getElementById('pageIndicator').innerHTML = `<strong>${num}</strong> / ${totalPages}`;
+        document.getElementById('zoomIndicator').textContent = Math.round(zoomLevel * 100) + '%';
+        document.getElementById('prevBtn').disabled = num <= 1;
+        document.getElementById('nextBtn').disabled = num >= totalPages;
+
+        // Evidenzia se nel range
+        const f = parseInt(fromPageInp.value);
+        const t = parseInt(toPageInp.value);
+        const inRange = num >= f && num <= t;
+        document.getElementById('pageOverlay').className = 'page-overlay' + (inRange ? ' in-range' : '');
+        document.getElementById('rangeChip').className   = 'range-chip' + (inRange ? ' show' : '');
+
+        // Attiva thumb
+        document.querySelectorAll('.thumb-item').forEach(el => {
+            el.classList.toggle('active', parseInt(el.dataset.page) === num);
+        });
+
+        updateSelectBtn(num);
+    }
+
+    function updateSelectBtn(num) {
+        const f = parseInt(fromPageInp.value);
+        const t = parseInt(toPageInp.value);
+        const btn = document.getElementById('selectRangeBtn');
+        if (num === f) btn.textContent = '📌 Già come inizio';
+        else if (num === t) btn.textContent = '📌 Già come fine';
+        else btn.textContent = '✂️ Usa questa pagina';
+    }
+
+    function setRangeFromModal() {
+        const num = currentPage;
+        const f   = parseInt(fromPageInp.value);
+        const t   = parseInt(toPageInp.value);
+        if (num < f || (num >= f && num <= t && num !== f)) {
+            fromPageInp.value = num;
+        } else {
+            toPageInp.value = num;
+        }
+        validatePages(); updateRangeTrack();
+        updateModalRangeInfo();
+        renderMainPage(currentPage);
+        showToast(`Pagina ${num} impostata`, 'info');
+    }
+
+    function applyRangeAndClose() {
+        validatePages(); updateRangeTrack();
+        closeModal();
+        showToast(`Range ${fromPageInp.value}–${toPageInp.value} applicato`, 'success');
+    }
+
+    function updateModalRangeInfo() {
+        const f = fromPageInp.value;
+        const t = toPageInp.value;
+        const info = document.getElementById('rangePreviewInfo');
+        if (f && t) {
+            const n = parseInt(t) - parseInt(f) + 1;
+            info.innerHTML = `Range attuale: pagine <strong>${f} → ${t}</strong> (${n} pagine)`;
+        } else {
+            info.textContent = 'Nessun range selezionato';
+        }
+    }
+
+    function changePage(delta) {
+        const np = currentPage + delta;
+        if (np >= 1 && np <= totalPages) renderMainPage(np);
+    }
+
+    function changeZoom(delta) {
+        zoomLevel = Math.max(0.4, Math.min(3.0, zoomLevel + delta));
+        renderMainPage(currentPage);
+    }
+
+    async function buildThumbs() {
+        const sidebar = document.getElementById('thumbSidebar');
+        sidebar.innerHTML = '';
+        const f = parseInt(fromPageInp.value) || 1;
+        const t = parseInt(toPageInp.value)   || totalPages;
+
+        for (let i = 1; i <= totalPages; i++) {
+            const item = document.createElement('div');
+            item.className = 'thumb-item' + (i >= f && i <= t ? ' in-range' : '') + (i === currentPage ? ' active' : '');
+            item.dataset.page = i;
+            item.innerHTML = `<div class="thumb-loading">⏳</div><div class="thumb-num">${i}</div>`;
+            item.onclick = () => renderMainPage(i);
+            sidebar.appendChild(item);
+        }
+
+        // Renderizza thumbnails in background
+        for (let i = 1; i <= totalPages; i++) {
+            renderThumb(i);
+        }
+    }
+
+    async function renderThumb(num) {
+        if (!pdfDoc || thumbsRendered.has(num)) return;
+        thumbsRendered.add(num);
+        try {
+            const page   = await pdfDoc.getPage(num);
+            const vp     = page.getViewport({ scale: 0.25 });
+            const canvas = document.createElement('canvas');
+            canvas.className = 'thumb-canvas';
+            canvas.width  = vp.width;
+            canvas.height = vp.height;
+            await page.render({ canvasContext: canvas.getContext('2d'), viewport: vp }).promise;
+            const item = document.querySelector(`.thumb-item[data-page="${num}"]`);
+            if (item) {
+                item.querySelector('.thumb-loading').replaceWith(canvas);
+            }
+        } catch(e) {}
+    }
+
+    // ── Toast ──
     function showToast(msg, type = 'info') {
-        const icons = { success: '✅', error: '❌', info: 'ℹ️' };
+        const icons = { success: '✅', error: '❌', info: 'ℹ️', warning: '⚠️' };
         const tc = document.getElementById('toastContainer');
         const t  = document.createElement('div');
         t.className = `toast ${type}`;
-        t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span>${msg}</span>`;
+        t.innerHTML = `<span class="toast-icon">${icons[type]}</span><span style="flex:1">${msg}</span><button class="toast-close" onclick="this.parentElement.remove()">✕</button>`;
         tc.appendChild(t);
-        setTimeout(() => {
-            t.style.animation = 'toastOut 0.3s ease forwards';
-            setTimeout(() => t.remove(), 300);
-        }, 3500);
+        setTimeout(() => { if (t.parentElement) { t.style.animation = 'none'; t.style.opacity = '0'; t.style.transform = 'translateX(20px)'; setTimeout(() => t.remove(), 300); } }, 4000);
     }
 </script>
 </body>
